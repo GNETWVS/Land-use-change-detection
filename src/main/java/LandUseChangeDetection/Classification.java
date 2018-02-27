@@ -4,6 +4,7 @@ import smile.classification.SVM;
 import smile.data.AttributeDataset;
 import smile.math.kernel.GaussianKernel;
 
+import java.io.File;
 import java.nio.file.Path;
 
 public class Classification {
@@ -20,7 +21,11 @@ public class Classification {
         svm.finish();
     }
 
-    void createTrainingData(Path osmShapePath, Path sentinelDataPath) {
+    void getOSMTrainingSamples(File osmShp) {
+
+    }
+
+    void getNextGISTrainingSamples(File nextShp) {
 
     }
 }
