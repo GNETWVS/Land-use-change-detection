@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.AnchorPane?>
 
-
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.Controller">
+<AnchorPane fx:id="osmTrainingPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.Controller">
     <children>
-        <Label layoutX="48.0" layoutY="69.0" prefHeight="16.0" prefWidth="136.0" text="ESA Sentinel 2 Data"/>
-        <Label layoutX="48.0" layoutY="105.0" text="OSM Shapefile"/>
+      <TitledPane animated="false" layoutX="7.0" layoutY="14.0" prefHeight="131.0" prefWidth="586.0" text="Input" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="14.0">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="105.0" prefWidth="200.0">
+               <children>
+                    <Label layoutX="26.0" layoutY="18.0" prefHeight="16.0" prefWidth="136.0" text="ESA Sentinel 2 Data" />
+                    <Label layoutX="26.0" layoutY="56.0" text="OSM Shapefile" />
+                  <Button fx:id="trainingSentinelDataChooser" layoutX="151.0" layoutY="14.0" mnemonicParsing="false" onAction="#selectSentinelTrainingData" text="Open File" />
+                  <Button layoutX="151.0" layoutY="52.0" mnemonicParsing="false" onAction="#openOSMTrainingData" text="Open File" />
+               </children>
+            </AnchorPane>
+        </content>
+      </TitledPane>
     </children>
 </AnchorPane>

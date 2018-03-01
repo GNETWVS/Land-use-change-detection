@@ -4,13 +4,20 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.esa.s2tbx.dataio.s2.Sentinel2ProductReader;
+import org.esa.s2tbx.dataio.s2.l1c.Sentinel2L1CProductReader;
 
+import java.io.File;
 import java.io.IOException;
 
 public class Controller {
+
+    public AnchorPane osmTrainingPane;
 
     public void openLearnOSMForm(ActionEvent actionEvent) {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/learnOSMForm.fxml"));
@@ -27,14 +34,42 @@ public class Controller {
     }
 
     public void openNextGisLearningForm(ActionEvent actionEvent) {
-        StackPane layout = new StackPane();
+    }
 
-        Scene nextGISScene = new Scene(layout, 230, 100);
+    /**
+     * Training sentinel data
+     */
+    private File sentinelTrainingFile = null;
 
-        Stage learnFromNextGISStage = new Stage();
-        learnFromNextGISStage.setTitle("Learn by NextGIS");
-        learnFromNextGISStage.setScene(nextGISScene);
+    /**
+     *
+     * @param actionEvent
+     */
+    public void selectSentinelTrainingData(ActionEvent actionEvent) {
+        //Select file
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Open Sentinel 2 Data");
+        fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Sentinel 2 Data (*.xml)",
+                "*.xml"));
+        this.sentinelTrainingFile = fc.showOpenDialog(osmTrainingPane.getScene().getWindow());
+    }
 
-        learnFromNextGISStage.show();
+    /**
+     * Training shapefile
+     */
+    private File trainingShapefile = null;
+
+    /**
+     * Select OpenStreetMap Shapefile for model training
+     * @param actionEvent open OSM training data action event
+     */
+    public void openOSMTrainingData(ActionEvent actionEvent) {
+        //Select file
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Open OSM Shapefile");
+        fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("OSM Shapefile (*.shp)",
+                        "*.shp"));
+        this.trainingShapefile = fc.showOpenDialog(osmTrainingPane.getScene().getWindow());
+
     }
 }
