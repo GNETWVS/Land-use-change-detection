@@ -70,6 +70,5 @@ public class Controller {
         fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("OSM Shapefile (*.shp)",
                         "*.shp"));
         this.trainingShapefile = fc.showOpenDialog(osmTrainingPane.getScene().getWindow());
-
     }
 }
