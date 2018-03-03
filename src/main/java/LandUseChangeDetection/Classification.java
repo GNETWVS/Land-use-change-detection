@@ -1,10 +1,12 @@
 package LandUseChangeDetection;
 
+import org.geotools.data.DataStore;
 import smile.classification.SVM;
 import smile.data.AttributeDataset;
 import smile.math.kernel.GaussianKernel;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 
 public class Classification {
@@ -21,11 +23,13 @@ public class Classification {
         svm.finish();
     }
 
-    void getOSMTrainingSamples(File osmShp) {
+    void getOSMTrainingSamples(File osmShp) throws IOException {
+        DataStore shpDataStore = Utils.openShapefile(osmShp);
 
     }
 
-    void getNextGISTrainingSamples(File nextShp) {
+    void getNextGISTrainingSamples(File nextShp) throws IOException {
+        DataStore shpDataStore = Utils.openShapefile(nextShp);
 
     }
 }

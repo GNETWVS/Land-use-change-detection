@@ -19,6 +19,20 @@ public class Controller {
 
     public AnchorPane osmTrainingPane;
 
+    public void getLevelUpFormHandler(ActionEvent actionEvent) {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/levelUpForm.fxml"));
+        try {
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Level Up Sentinel 2 Data");
+            stage.setScene(new Scene(root, 450, 450));
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void openLearnOSMForm(ActionEvent actionEvent) {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/learnOSMForm.fxml"));
         try {
