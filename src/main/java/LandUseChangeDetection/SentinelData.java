@@ -23,15 +23,4 @@ public class SentinelData {
         JP2KReader reader = new JP2KReader(bandFile);
         return reader.read(null);
     }
-
-    static void levelUp(File sentinel1CLevel) throws IOException {
-        ProcessBuilder pBuilder = new ProcessBuilder("L2A_Process", "--help");
-        pBuilder.redirectErrorStream(true);
-        final Process process = pBuilder.start();
-    }
-
-    static void upTo2ALevel(File sentinel1CLevel) throws IOException {
-        Runtime runtime = Runtime.getRuntime();
-        Process process = runtime.exec("");
-    }
 }

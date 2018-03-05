@@ -26,7 +26,8 @@ public class Controller {
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setTitle("Level Up Sentinel 2 Data");
-            stage.setScene(new Scene(root, 450, 450));
+            stage.setScene(new Scene(root, 600, 234));
+            stage.setResizable(false);
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
