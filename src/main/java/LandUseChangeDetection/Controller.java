@@ -19,6 +19,10 @@ public class Controller {
 
     public AnchorPane osmTrainingPane;
 
+    /**
+     * Show level up form
+     * @param actionEvent level up form opening action event
+     */
     public void getLevelUpFormHandler(ActionEvent actionEvent) {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/levelUpForm.fxml"));
         try {
