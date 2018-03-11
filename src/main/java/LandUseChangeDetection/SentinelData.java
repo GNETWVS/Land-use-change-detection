@@ -7,7 +7,10 @@ import org.gdal.gdalconst.gdalconstConstants;
 import org.gdal.osr.SpatialReference;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverageio.jp2k.JP2KReader;
+import org.opengis.geometry.Envelope;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -25,6 +28,10 @@ enum Resolution {
 }
 
 public class SentinelData {
+
+    static {
+        gdal.AllRegister();
+    }
 
     /**
      * JP2k Extension
@@ -65,6 +72,31 @@ public class SentinelData {
      */
     public Resolution getResolution() {
         return resolution;
+    }
+
+    /**
+     * Get bands CRS
+     * @return bands CRS
+     */
+    public CoordinateReferenceSystem getCRS() {
+        if (this.bands == null || this.bands.size() == 0) {
+            return null;
+        }
+        return this.bands.get(0).getCoordinateReferenceSystem2D();
+    }
+
+    public Dimension getGridDimension() {
+        if (this.bands == null || this.bands.size() == 0) {
+            return null;
+        }
+        return new Dimension(this.bands.get(1).getRenderedImage().getWidth(), this.bands.get(1).getRenderedImage().getHeight());
+    }
+
+    public Envelope getEnvelope() {
+        if (this.bands == null || this.bands.size() == 0) {
+            return null;
+        }
+        return this.bands.get(0).getEnvelope();
     }
 
     SentinelData(File dataDir, Resolution r) throws Exception {
@@ -135,7 +167,7 @@ public class SentinelData {
      * @param bandFile Sentinel band file
      */
     private void writeJP2Info(File bandFile) throws Exception {
-        gdal.AllRegister();
+        //gdal.AllRegister();
         String[] args = new String[]{bandFile.getAbsolutePath()};
         args = gdal.GeneralCmdLineProcessor(args);
         Dataset hDataSet = gdal.Open(args[0], gdalconstConstants.GA_ReadOnly);

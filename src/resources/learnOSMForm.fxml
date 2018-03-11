@@ -5,9 +5,9 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="osmTrainingPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.Controller">
+<AnchorPane fx:id="osmTrainingPane" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.forms.TrainOSMForm">
     <children>
-      <TitledPane animated="false" layoutX="7.0" layoutY="14.0" prefHeight="131.0" prefWidth="586.0" text="Input" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="14.0">
+      <TitledPane animated="false" collapsible="false" layoutX="7.0" layoutY="14.0" prefHeight="131.0" prefWidth="586.0" text="Input" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="14.0">
         <content>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="105.0" prefWidth="200.0">
                <children>

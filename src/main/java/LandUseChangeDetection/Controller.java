@@ -17,8 +17,6 @@ import java.io.IOException;
 
 public class Controller {
 
-    public AnchorPane osmTrainingPane;
-
     /**
      * Show level up form
      * @param actionEvent level up form opening action event
@@ -38,6 +36,10 @@ public class Controller {
         }
     }
 
+    /**
+     * Open learn form based on OSM data
+     * @param actionEvent OSM learn form opening action event
+     */
     public void openLearnOSMForm(ActionEvent actionEvent) {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/learnOSMForm.fxml"));
         try {
@@ -52,42 +54,21 @@ public class Controller {
         }
     }
 
+    /**
+     * Open learn form based on NextGis data
+     * @param actionEvent NextGis learn form opening action event
+     */
     public void openNextGisLearningForm(ActionEvent actionEvent) {
-    }
-
-    /**
-     * Training sentinel data
-     */
-    private File sentinelTrainingFile = null;
-
-    /**
-     *
-     * @param actionEvent
-     */
-    public void selectSentinelTrainingData(ActionEvent actionEvent) {
-        //Select file
-        FileChooser fc = new FileChooser();
-        fc.setTitle("Open Sentinel 2 Data");
-        fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Sentinel 2 Data (*.xml)",
-                "*.xml"));
-        this.sentinelTrainingFile = fc.showOpenDialog(osmTrainingPane.getScene().getWindow());
-    }
-
-    /**
-     * Training shapefile
-     */
-    private File trainingShapefile = null;
-
-    /**
-     * Select OpenStreetMap Shapefile for model training
-     * @param actionEvent open OSM training data action event
-     */
-    public void openOSMTrainingData(ActionEvent actionEvent) {
-        //Select file
-        FileChooser fc = new FileChooser();
-        fc.setTitle("Open OSM Shapefile");
-        fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("OSM Shapefile (*.shp)",
-                        "*.shp"));
-        this.trainingShapefile = fc.showOpenDialog(osmTrainingPane.getScene().getWindow());
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/learnNextGISForm.fxml"));
+        try {
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Learn SVM by NextGIS");
+            stage.setScene(new Scene(root, 450, 450));
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
