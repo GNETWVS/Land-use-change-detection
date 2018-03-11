@@ -1,23 +1,35 @@
 package LandUseChangeDetection;
 
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.MultiPolygon;
 import it.geosolutions.imageio.plugins.jp2k.JP2KKakaduImageWriter;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverageio.jp2k.JP2KFormat;
 import org.geotools.data.DataStore;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.filter.ConstantExpression;
 import org.geotools.filter.FunctionImpl;
 import org.geotools.filter.LiteralExpressionImpl;
 import org.geotools.gce.geotiff.GeoTiffFormat;
+import org.geotools.geometry.jts.JTS;
 import org.geotools.process.vector.VectorToRasterProcess;
+import org.geotools.referencing.CRS;
 import org.geotools.util.Converters;
 import org.opengis.coverage.grid.GridCoverageWriter;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.expression.*;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
+import org.opengis.referencing.operation.TransformException;
 import smile.classification.SVM;
 import smile.data.AttributeDataset;
 import smile.math.kernel.GaussianKernel;
@@ -58,7 +70,10 @@ public class Classification {
                     "orchard",
                     "plant_nursery",
                     "vineyard",
-                    "farm"
+                    "farm",
+                    "allotments",
+                    "farmyard"
+                    //greenhouse_horticulture ??? or urban
             )),
             // Urban classes
             // Build up
@@ -71,13 +86,20 @@ public class Classification {
                     "retail",
                     "school"
             )),
+            // TODO: Infrasturcure
+            // TODO: Recreation
             // Landfill
             Collections.unmodifiableList(Arrays.asList(
-
+                    "brownfield",
+                    "construction",
+                    "landfill", //(separate?)
+                    "quarry",
+                    "salt_pond"
             )),
             // Forest class
             Collections.unmodifiableList(Arrays.asList(
-                    "forest"
+                    "forest",
+                    "wood" //logging
             ))
     ));
 
@@ -118,16 +140,20 @@ public class Classification {
     private final static String WATER_POLYGON_SHP_NAME = "water-polygon.shp";
 
     /**
-     *
-     * @param nextShp
-     * @param sentinelData
-     * @throws Exception
+     * NextGIS shapefile with lu (agriculture)
      */
+    private final static String LAND_USE_POLYGON_SHP_NAME = "landuse-polygon.shp";
+
+    private final static String VEGETATION_POLYGON_SHP_NAME = "vegetation-polygon.shp";
+
+    // TODO: railway and highway
+
     private void getNextGISTrainingSamples(File nextShp, SentinelData sentinelData) throws Exception {
         // Checking for directory
         if (!nextShp.isDirectory()) {
             throw new Exception("Error, NextSHP file is not directory");
         }
+
         // Water class (water-polygon.shp)
         File waterShpFile = new File(nextShp.getAbsolutePath() + File.separator + WATER_POLYGON_SHP_NAME);
         if (!waterShpFile.exists()) {
@@ -143,6 +169,93 @@ public class Classification {
         waterFC = Utils.transformToCRS(waterFC, sentinelData.getCRS());
         GridCoverage2D waterCoverage = VectorToRasterProcess.process(waterFC, ConstantExpression.constant(1),
                 sentinelData.getGridDimension(), sentinelData.getEnvelope(), "waterMask", null);
+
+        // Land use shapefile
+        File landUseFile = new File(nextShp.getAbsolutePath() + File.separator + LAND_USE_POLYGON_SHP_NAME);
+        if (!landUseFile.exists()) {
+            throw new FileNotFoundException("Error, NextGIS doesn't contain land-use file");
+        }
+        DataStore landUseDataStore = Utils.openShapefile(landUseFile);
+        if (landUseDataStore == null || landUseDataStore.getTypeNames() == null ||landUseDataStore.getTypeNames().length == 0) {
+            throw new NullPointerException("Land-Use vector store is null");
+        }
+        String landUseTypeName = landUseDataStore.getTypeNames()[0];
+        SimpleFeatureSource landUseFeatureSource = landUseDataStore.getFeatureSource(landUseTypeName);
+        SimpleFeatureCollection landUseFC = landUseFeatureSource.getFeatures();
+        // Extract tags from land use shapefile
+        DefaultFeatureCollection[] featureCollections = extractClassesFeatures(null, landUseFC, "LANDUSE", sentinelData.getCRS());
+
+        // Vegetation shape file
+        File vegetationFile = new File(nextShp.getAbsolutePath() + File.separator + VEGETATION_POLYGON_SHP_NAME);
+        if (!landUseFile.exists()) {
+            throw new FileNotFoundException("Error, NextGIS doesn't contain vegetation file");
+        }
+        DataStore vegetationDataStore = Utils.openShapefile(landUseFile);
+        if (vegetationDataStore == null || vegetationDataStore.getTypeNames() == null || vegetationDataStore.getTypeNames().length == 0) {
+            throw new NullPointerException("Vegetation vector store is null");
+        }
+        String vegetationTypeName = vegetationDataStore.getTypeNames()[0];
+        SimpleFeatureSource vegetationFeatureSource = vegetationDataStore.getFeatureSource(vegetationTypeName);
+        SimpleFeatureCollection vegetationFC = vegetationFeatureSource.getFeatures();
+        // Convert
+        featureCollections = extractClassesFeatures(featureCollections, vegetationFC, "NATURAL", sentinelData.getCRS());
+
+        // Convert result to simple feature collection array
+        SimpleFeatureCollection[] simpleFeatureCollections = new SimpleFeatureCollection[featureCollections.length];
+        for (int i = 0; i < simpleFeatureCollections.length; i++) {
+            simpleFeatureCollections[i] = featureCollections[i];
+        }
         
+        // TODO: Raster masks
+    }
+
+    private SimpleFeatureTypeBuilder typeBuilder = null;
+    private SimpleFeatureBuilder featureBuilder = null;
+
+    private DefaultFeatureCollection[] extractClassesFeatures(DefaultFeatureCollection[] featureCollections,
+                                                             SimpleFeatureCollection fc, String attributeName,
+                                                             CoordinateReferenceSystem crs) throws FactoryException, TransformException {
+        // Type builder
+        if (this.typeBuilder == null) {
+            typeBuilder = new SimpleFeatureTypeBuilder();
+            typeBuilder.setName("Training");
+            typeBuilder.setCRS(crs);
+            typeBuilder.add("geom", MultiPolygon.class);
+            SimpleFeatureType featureType = typeBuilder.buildFeatureType();
+            featureBuilder = new SimpleFeatureBuilder(featureType);
+        }
+        // Init collection array
+        if (featureCollections == null) {
+            featureCollections = new DefaultFeatureCollection[LAND_USE_CLASSES.size()];
+            for (int i = 0; i < featureCollections.length; i++) {
+                featureCollections[i] = new DefaultFeatureCollection(null, null);
+            }
+        }
+
+        // CRS transformer
+        MathTransform transform = null;
+        if (!CRS.equalsIgnoreMetadata(fc.getSchema().getCoordinateReferenceSystem(), crs)) {
+            transform = CRS.findMathTransform(fc.getSchema().getCoordinateReferenceSystem(), crs, true);
+        }
+        // Extract features
+        SimpleFeatureIterator it = fc.features();
+        while (it.hasNext()) {
+            SimpleFeature feature = it.next();
+            String featureTag = (String)(feature.getAttribute(attributeName));
+            for (int i = 0; i < LAND_USE_CLASSES.size(); i++) {
+                if (LAND_USE_CLASSES.get(i).contains(featureTag)) {
+                    Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                    if (transform != null) {
+                        geometry = JTS.transform(geometry, transform);
+                    }
+                    featureBuilder.add(geometry);
+                    SimpleFeature tagFeature = featureBuilder.buildFeature(null);
+                    featureCollections[i].add(tagFeature);
+                    break;
+                }
+            }
+        }
+
+        return featureCollections;
     }
 }

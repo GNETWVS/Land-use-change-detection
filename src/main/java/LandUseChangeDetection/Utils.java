@@ -56,7 +56,6 @@ public class Utils {
             typeBuilder.setName(fc.getSchema().getName());
             typeBuilder.setCRS(crs);
             typeBuilder.add("geom", MultiPolygon.class);
-            typeBuilder.add("flag", Integer.class);
             final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
             DefaultFeatureCollection transformedFC = new DefaultFeatureCollection(null, null);
             SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
@@ -67,7 +66,6 @@ public class Utils {
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
                     geometry = JTS.transform(geometry, transform);
                     featureBuilder.add(geometry);
-                    featureBuilder.add(88888);
                     SimpleFeature transformedFeature = featureBuilder.buildFeature(null);
                     transformedFC.add(transformedFeature);
                 }
@@ -79,4 +77,6 @@ public class Utils {
         }
         return fc;
     }
+
+    // TODO: Safe attributes
 }
