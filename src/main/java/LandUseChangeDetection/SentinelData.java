@@ -11,6 +11,7 @@ import org.opengis.geometry.Envelope;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.awt.*;
+import java.awt.image.Raster;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -85,18 +86,62 @@ public class SentinelData {
         return this.bands.get(0).getCoordinateReferenceSystem2D();
     }
 
+    public int getWidth() {
+        return this.bands.get(0).getRenderedImage().getWidth();
+    }
+
+    public int getHeight() {
+        return this.bands.get(0).getRenderedImage().getHeight();
+    }
+
+    /**
+     * Get bands' grid dimension
+     * @return
+     */
     public Dimension getGridDimension() {
         if (this.bands == null || this.bands.size() == 0) {
             return null;
         }
-        return new Dimension(this.bands.get(1).getRenderedImage().getWidth(), this.bands.get(1).getRenderedImage().getHeight());
+        return new Dimension(this.getWidth(), this.getHeight());
     }
 
+    /**
+     * Get raster's envelope
+     * @return Raster envelope
+     */
     public Envelope getEnvelope() {
         if (this.bands == null || this.bands.size() == 0) {
             return null;
         }
         return this.bands.get(0).getEnvelope();
+    }
+
+    /**
+     * Data pixels
+     */
+    private double[][] pixels;
+
+    /**
+     * Get pixel data vector
+     * @param pixel pixel number
+     * @return Data vector
+     */
+    public double[] getPixelVector(int pixel) {
+        // Lazy initialization
+        if (pixels == null) {
+            pixels = new double[bands.size()][];
+            for (int i = 0; i < bands.size(); i++) {
+                Raster band = bands.get(i).getRenderedImage().getData();
+                pixels[i] = new double[this.getWidth() * this.getHeight()];
+                band.getPixels(band.getMinX(), band.getMinY(), this.getWidth(), this.getHeight(), pixels[i]);
+            }
+        }
+        // TODO: Checking for size?
+        double[] vector = new double[bands.size()];
+        for (int i = 0; i < vector.length; i++) {
+            vector[i] = pixels[i][pixel];
+        }
+        return vector;
     }
 
     SentinelData(File dataDir, Resolution r) throws Exception {
@@ -123,6 +168,7 @@ public class SentinelData {
         if (files == null) {
             throw new NullPointerException("Error, incorrect SL2 Data");
         }
+        // TODO: Filter bands
         bands = new ArrayList<>(files.length);
         for (File bandFile : files) {
             if (FilenameUtils.getExtension(bandFile.getName()).equals(JP2K_EXTENSION)) {

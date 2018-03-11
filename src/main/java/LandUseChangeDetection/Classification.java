@@ -18,6 +18,7 @@ import org.geotools.filter.ConstantExpression;
 import org.geotools.filter.FunctionImpl;
 import org.geotools.filter.LiteralExpressionImpl;
 import org.geotools.gce.geotiff.GeoTiffFormat;
+import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.process.vector.VectorToRasterProcess;
 import org.geotools.referencing.CRS;
@@ -41,9 +42,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
 
 public class Classification {
@@ -84,12 +83,12 @@ public class Classification {
                     "religious",
                     "residential",
                     "retail",
-                    "school"
-            )),
-            // TODO: Infrasturcure
-            // TODO: Recreation
-            // Landfill
-            Collections.unmodifiableList(Arrays.asList(
+                    "school",
+//            )),
+//            // TODO: Infrasturcure
+//            // TODO: Recreation
+//            // Landfill
+//            Collections.unmodifiableList(Arrays.asList(
                     "brownfield",
                     "construction",
                     "landfill", //(separate?)
@@ -106,7 +105,7 @@ public class Classification {
     private Classification() {
         // TODO: Разобраться с sigma и penalty
         // TODO: Grid seach (c and gamma)
-        this.svm = new SVM<double[]>(new GaussianKernel(1), 1, 10, SVM.Multiclass.ONE_VS_ONE);
+        this.svm = new SVM<double[]>(new GaussianKernel(8.0), 5.0, 4, SVM.Multiclass.ONE_VS_ALL);
     }
 
     public static Classification getInstance() {
@@ -116,7 +115,26 @@ public class Classification {
         return instance;
     }
 
-    void learn(double[][] data, int[] label) {
+    private void trainAndValidateModel(SVMData svmData) {
+        double[][] data = svmData.getTrainingVectors();
+        int[] cl = svmData.getTrainingLabels();
+        learn(data, cl);
+        double[][] validationData = svmData.getValidationVectors();
+        int[] validationInputs = svmData.getValidationLabels();
+        int count = 0;
+        for (int i = 0; i < data.length; i++){
+            int res = svm.predict(data[i]);
+            if (res == cl[i]) {
+                count++;
+                System.out.println("COOL: " + res + " is " + cl[i]);
+            } else {
+                System.out.println("MISS: " + res + " not " +cl[i]);
+            }
+        }
+        System.out.println((double)count * 100 / validationData.length);
+    }
+
+    private void learn(double[][] data, int[] label) {
         svm.learn(data, label);
         svm.finish();
     }
@@ -131,7 +149,9 @@ public class Classification {
 
     public void trainByNextGISData(File nextShp, File s2DataFile) throws Exception {
         SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
-        getNextGISTrainingSamples(nextShp, sData);
+        GridCoverage2D[] masks = getNextGISCoverage(nextShp, sData);
+        SVMData svmData = getTrainingAndValidationData(sData, masks);
+        trainAndValidateModel(svmData);
     }
 
     /**
@@ -144,14 +164,26 @@ public class Classification {
      */
     private final static String LAND_USE_POLYGON_SHP_NAME = "landuse-polygon.shp";
 
+    /**
+     * NextGIS shapefile with vegetation (forest, wood)
+     */
     private final static String VEGETATION_POLYGON_SHP_NAME = "vegetation-polygon.shp";
 
     // TODO: railway and highway
 
-    private void getNextGISTrainingSamples(File nextShp, SentinelData sentinelData) throws Exception {
+    /**
+     * Resterization of NextGIS data for classes
+     * @param nextShp NextGIS shapefiles directory
+     * @param sentinelData Sentinel 2 data
+     * @return Array of masks by groups
+     * @throws IOException Cannot open files
+     * @throws FactoryException Cannot create feature builder
+     * @throws TransformException Cannot change CRS
+     */
+    private GridCoverage2D[] getNextGISCoverage(File nextShp, SentinelData sentinelData) throws IOException, FactoryException, TransformException {
         // Checking for directory
         if (!nextShp.isDirectory()) {
-            throw new Exception("Error, NextSHP file is not directory");
+            throw new FileNotFoundException("Error, NextSHP file is not directory");
         }
 
         // Water class (water-polygon.shp)
@@ -167,8 +199,7 @@ public class Classification {
         SimpleFeatureSource waterFeatureSource = waterDataStore.getFeatureSource(waterTypeName);
         SimpleFeatureCollection waterFC = waterFeatureSource.getFeatures();
         waterFC = Utils.transformToCRS(waterFC, sentinelData.getCRS());
-        GridCoverage2D waterCoverage = VectorToRasterProcess.process(waterFC, ConstantExpression.constant(1),
-                sentinelData.getGridDimension(), sentinelData.getEnvelope(), "waterMask", null);
+
 
         // Land use shapefile
         File landUseFile = new File(nextShp.getAbsolutePath() + File.separator + LAND_USE_POLYGON_SHP_NAME);
@@ -190,7 +221,7 @@ public class Classification {
         if (!landUseFile.exists()) {
             throw new FileNotFoundException("Error, NextGIS doesn't contain vegetation file");
         }
-        DataStore vegetationDataStore = Utils.openShapefile(landUseFile);
+        DataStore vegetationDataStore = Utils.openShapefile(vegetationFile);
         if (vegetationDataStore == null || vegetationDataStore.getTypeNames() == null || vegetationDataStore.getTypeNames().length == 0) {
             throw new NullPointerException("Vegetation vector store is null");
         }
@@ -202,16 +233,42 @@ public class Classification {
 
         // Convert result to simple feature collection array
         SimpleFeatureCollection[] simpleFeatureCollections = new SimpleFeatureCollection[featureCollections.length];
-        for (int i = 0; i < simpleFeatureCollections.length; i++) {
-            simpleFeatureCollections[i] = featureCollections[i];
+        System.arraycopy(featureCollections, 0, simpleFeatureCollections, 0, featureCollections.length);
+
+        // Resterization
+        GridCoverage2D[] masks = new GridCoverage2D[simpleFeatureCollections.length];
+        // Water mask
+        GridCoverage2D waterCoverage = VectorToRasterProcess.process(waterFC, ConstantExpression.constant(1),
+                sentinelData.getGridDimension(), sentinelData.getEnvelope(), "waterMask", null);
+        masks[0] = waterCoverage;
+        for (int i = 1; i < masks.length; i++) {
+            masks[i] = VectorToRasterProcess.process(simpleFeatureCollections[i], ConstantExpression.constant(1),
+                    sentinelData.getGridDimension(), sentinelData.getEnvelope(), String.valueOf(i), null);
         }
-        
-        // TODO: Raster masks
+
+        return masks;
     }
 
+    /**
+     * Feature type builder
+     */
     private SimpleFeatureTypeBuilder typeBuilder = null;
+
+    /**
+     * Feature builder
+     */
     private SimpleFeatureBuilder featureBuilder = null;
 
+    /**
+     * Extract features from collection according croup tags
+     * @param featureCollections Collections for updating
+     * @param fc Collection with new features
+     * @param attributeName Attribute of feature for looking
+     * @param crs Purposed coordinate reference system
+     * @return Updated feature collections
+     * @throws FactoryException Cannot create builder
+     * @throws TransformException Cannot transform features
+     */
     private DefaultFeatureCollection[] extractClassesFeatures(DefaultFeatureCollection[] featureCollections,
                                                              SimpleFeatureCollection fc, String attributeName,
                                                              CoordinateReferenceSystem crs) throws FactoryException, TransformException {
@@ -238,24 +295,136 @@ public class Classification {
             transform = CRS.findMathTransform(fc.getSchema().getCoordinateReferenceSystem(), crs, true);
         }
         // Extract features
-        SimpleFeatureIterator it = fc.features();
-        while (it.hasNext()) {
-            SimpleFeature feature = it.next();
-            String featureTag = (String)(feature.getAttribute(attributeName));
-            for (int i = 0; i < LAND_USE_CLASSES.size(); i++) {
-                if (LAND_USE_CLASSES.get(i).contains(featureTag)) {
-                    Geometry geometry = (Geometry) feature.getDefaultGeometry();
-                    if (transform != null) {
-                        geometry = JTS.transform(geometry, transform);
+        try (SimpleFeatureIterator it = fc.features()) {
+            while (it.hasNext()) {
+                SimpleFeature feature = it.next();
+                String featureTag = (String) (feature.getAttribute(attributeName));
+                for (int i = 0; i < LAND_USE_CLASSES.size(); i++) {
+                    if (LAND_USE_CLASSES.get(i).contains(featureTag)) {
+                        Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                        if (transform != null) {
+                            geometry = JTS.transform(geometry, transform);
+                        }
+                        featureBuilder.add(geometry);
+                        SimpleFeature tagFeature = featureBuilder.buildFeature(null);
+                        featureCollections[i].add(tagFeature);
+                        break;
                     }
-                    featureBuilder.add(geometry);
-                    SimpleFeature tagFeature = featureBuilder.buildFeature(null);
-                    featureCollections[i].add(tagFeature);
-                    break;
                 }
             }
         }
 
         return featureCollections;
+    }
+
+    /**
+     * Random generator
+     */
+    private static Random random = new Random();
+
+    /**
+     * Extract training data and divide to training and validation data
+     * @param sentinelData Sentinel 2 Data
+     * @param masks Classes masks
+     * @return Extracted and divided data
+     */
+    private SVMData getTrainingAndValidationData(SentinelData sentinelData, GridCoverage2D[] masks) {
+        SVMData svmData = new SVMData();
+        int height = sentinelData.getHeight();
+        int width = sentinelData.getWidth();
+        for (int i = 0; i < masks.length; i++) {
+            int count = 0;
+            float[] maskPixels = new float[height * width];
+            Raster mask = masks[i].getRenderedImage().getData();
+            mask.getPixels(mask.getMinX(), mask.getMinY(), width, height, maskPixels);
+            for (int j = 0; j < maskPixels.length; j++) {
+                if (maskPixels[j] == 1.0F) {
+                    double[] vector = sentinelData.getPixelVector(j);
+                    // Add vector to SVM data
+                    if (random.nextBoolean()) {
+                        if (++count == 10000) {
+                            break;
+                        }
+                        svmData.addTrainingData(vector, i);
+                    } else {
+                        svmData.addValidationData(vector, i);
+                    }
+                }
+            }
+        }
+        return svmData;
+    }
+
+
+    /**
+     * SVM training and validation data
+     */
+    private class SVMData{
+
+        /**
+         * List of training Sentinel 2 data vectors
+         */
+        private List<double[]> trainingVectors;
+
+        /**
+         * List of classes of training Sentinel 2 data vectors
+         */
+        private List<Integer> trainingClasses;
+
+        /**
+         * List of validation Sentinel 2 data vectors
+         */
+        private List<double[]> validationVectors;
+
+        /**
+         * List of classes of validation Sentinel 2 data vectors
+         */
+        private List<Integer> validationClasses;
+
+        double[][] getTrainingVectors() {
+            return this.trainingVectors.toArray(new double[trainingVectors.size()][]);
+        }
+
+        int[] getTrainingLabels() {
+            return this.trainingClasses.stream().mapToInt(i -> i).toArray();
+        }
+
+        double[][] getValidationVectors() {
+            return this.validationVectors.toArray(new double[validationClasses.size()][]);
+        }
+
+        int[] getValidationLabels() {
+            return this.validationClasses.stream().mapToInt(i -> i).toArray();
+        }
+
+        /**
+         * SVM training and validation data initializer
+         */
+        SVMData() {
+            trainingVectors = new ArrayList<>();
+            trainingClasses = new ArrayList<>();
+            validationVectors = new ArrayList<>();
+            validationClasses = new ArrayList<>();
+        }
+
+        /**
+         * Add training data
+         * @param value Sentinel 2 values vector
+         * @param cl Data class
+         */
+        void addTrainingData(double[] value, int cl) {
+            this.trainingVectors.add(value);
+            this.trainingClasses.add(cl);
+        }
+
+        /**
+         * Add validation data
+         * @param value Sentinel 2 values vector
+         * @param cl Data class
+         */
+        void addValidationData(double[] value, int cl) {
+            this.validationVectors.add(value);
+            this.validationClasses.add(cl);
+        }
     }
 }
