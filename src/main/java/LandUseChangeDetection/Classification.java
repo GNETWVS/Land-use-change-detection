@@ -103,7 +103,7 @@ public class Classification {
     }
 
     private void trainAndValidateModel(SVMData svmData) {
-        SVMSet[] sets = svmData.getCrossValidationData(2);
+        SVMSet[] sets = svmData.getCrossValidationData(5);
         // TODO: Grid search values range
         double selectedS = 0;
         double selectedC = 0;
@@ -133,6 +133,9 @@ public class Classification {
                     double accuracy = (double)count * 100 / size;
                     System.out.println(accuracy);
                     averageAccuracy += accuracy;
+                    if (accuracy > ac) {
+                        this.svm = svm;
+                    }
                 }
                 averageAccuracy /= sets.length;
                 System.out.println("S = " + s + "; C = " + c + "; accuracy = " + averageAccuracy);
@@ -144,6 +147,29 @@ public class Classification {
             }
         }
         System.out.println("c = " + selectedC + "; s" + selectedS + "; ac = " + ac);
+        for (int z = 0; z < 3; z++) {
+            sets = svmData.getCrossValidationData(5);
+            for (int i = 0; i < 1; ++i) {
+                svm.learn(sets[i].vectors, sets[i].labels);
+                svm.finish();
+                int count = 0;
+                int size = 0;
+                // Cross validation
+                for (int j = 0; j < sets.length; ++j) {
+                    if (i == j) {
+                        continue;
+                    }
+                    size += sets[j].labels.length;
+                    for (int l = 0; l < sets[j].labels.length; ++l) {
+                        if (svm.predict(sets[j].vectors[l]) == sets[j].labels[l]) {
+                            ++count;
+                        }
+                    }
+                }
+                double accuracy = (double) count * 100 / size;
+                System.out.println(accuracy);
+            }
+        }
     }
 
     private void learn(double[][] data, int[] label) {
@@ -347,7 +373,7 @@ public class Classification {
         int height = sentinelData.getHeight();
         int width = sentinelData.getWidth();
         for (int i = 0; i < masks.length; i++) {
-            int count = 0;
+            //int count = 0;
             float[] maskPixels = new float[height * width];
             Raster mask = masks[i].getRenderedImage().getData();
             mask.getPixels(mask.getMinX(), mask.getMinY(), width, height, maskPixels);
@@ -355,10 +381,10 @@ public class Classification {
                 if (maskPixels[j] == 1.0F) {
                     double[] vector = sentinelData.getPixelVector(j);
                     svmData.add(new SVMVector(vector, i));
-                    ++count;
-                    if (count == 3000) {
-                        break;
-                    }
+                    //++count;
+                    //if (count == 10000) {
+                    //    break;
+                    //}
                     // Add vector to SVM data
 //                    if (random.nextBoolean()) {
 //                        svmData.addTrainingData(vector, i);
@@ -421,10 +447,10 @@ public class Classification {
             SVMSet[] sets = new SVMSet[setsNumber];
             for (int i = 0; i < setsNumber; ++i) {
                 int size;
-                if (i == setsNumber - 1) {
+                if (this.data.size() < 3000) {
                     size = this.data.size();
                 } else {
-                    size = this.data.size() / setsNumber;
+                    size = 3000;
                 }
                 double[][] tempVectors = new double[size][];
                 int[] tempLabels = new int[size];

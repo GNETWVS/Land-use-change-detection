@@ -78,5 +78,24 @@ public class Utils {
         return fc;
     }
 
-    // TODO: Safe attributes
+    /**
+     * Check for level
+     * @param file sentinel 2 data
+     * @return existing
+     */
+    public static boolean isLevel2A(File file) {
+        if (!file.isDirectory()) {
+            return false;
+        }
+        String[] files = file.list();
+        if (files == null) {
+            return false;
+        }
+        for (String s : files) {
+            if (s.equals("MTD_MSIL2A.xml")) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
