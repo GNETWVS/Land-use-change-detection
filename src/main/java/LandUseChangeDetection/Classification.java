@@ -2,49 +2,34 @@ package LandUseChangeDetection;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
-import it.geosolutions.imageio.plugins.jp2k.JP2KKakaduImageWriter;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverageio.jp2k.JP2KFormat;
 import org.geotools.data.DataStore;
-import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.filter.ConstantExpression;
-import org.geotools.filter.FunctionImpl;
-import org.geotools.filter.LiteralExpressionImpl;
-import org.geotools.gce.geotiff.GeoTiffFormat;
-import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.process.vector.VectorToRasterProcess;
 import org.geotools.referencing.CRS;
-import org.geotools.util.Converters;
-import org.opengis.coverage.grid.GridCoverageWriter;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.filter.expression.*;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import smile.classification.SVM;
-import smile.data.AttributeDataset;
 import smile.math.kernel.GaussianKernel;
-import sun.plugin2.message.Conversation;
 
-import java.awt.*;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.List;
 
+// TODO: Serilization of singleton
 public class Classification {
 
     /**
@@ -85,9 +70,9 @@ public class Classification {
                     "retail",
                     "school",
 //            )),
-//            // TODO: Infrasturcure
-//            // TODO: Recreation
-//            // Landfill
+////            // TODO: Infrasturcure
+////            // TODO: Recreation
+////            // Landfill
 //            Collections.unmodifiableList(Arrays.asList(
                     "brownfield",
                     "construction",
@@ -105,7 +90,9 @@ public class Classification {
     private Classification() {
         // TODO: Разобраться с sigma и penalty
         // TODO: Grid seach (c and gamma)
-        this.svm = new SVM<double[]>(new GaussianKernel(8.0), 5.0, 4, SVM.Multiclass.ONE_VS_ALL);
+        // TODO: sigma and C selection
+        //this.svm = new SVM<double[]>(new GaussianKernel(1500), 9000, 4, SVM.Multiclass.ONE_VS_ALL);
+        //this.svm = new SVM<double[]>(new smile.math.kernel.)
     }
 
     public static Classification getInstance() {
@@ -116,22 +103,47 @@ public class Classification {
     }
 
     private void trainAndValidateModel(SVMData svmData) {
-        double[][] data = svmData.getTrainingVectors();
-        int[] cl = svmData.getTrainingLabels();
-        learn(data, cl);
-        double[][] validationData = svmData.getValidationVectors();
-        int[] validationInputs = svmData.getValidationLabels();
-        int count = 0;
-        for (int i = 0; i < data.length; i++){
-            int res = svm.predict(data[i]);
-            if (res == cl[i]) {
-                count++;
-                System.out.println("COOL: " + res + " is " + cl[i]);
-            } else {
-                System.out.println("MISS: " + res + " not " +cl[i]);
+        SVMSet[] sets = svmData.getCrossValidationData(2);
+        // TODO: Grid search values range
+        double selectedS = 0;
+        double selectedC = 0;
+        double ac = 0;
+        for (double s = 4548; s == 4548; s += 500) {
+            for (double c = 4096; c == 4096; c *= 2) {
+                double averageAccuracy = 0;
+                for (int i = 0; i < sets.length; ++i){
+                    // Learn and validate using cross validation
+                    SVM<double[]> svm = new SVM<>(new GaussianKernel(s), c, LAND_USE_CLASSES.size(), SVM.Multiclass.ONE_VS_ALL);
+                    svm.learn(sets[i].vectors, sets[i].labels);
+                    svm.finish();
+                    int count = 0;
+                    int size = 0;
+                    // Cross validation
+                    for (int j = 0; j < sets.length; ++j){
+                        if (i == j) {
+                            continue;
+                        }
+                        size += sets[j].labels.length;
+                        for (int l = 0; l < sets[j].labels.length; ++l) {
+                            if (svm.predict(sets[j].vectors[l]) == sets[j].labels[l]) {
+                                ++count;
+                            }
+                        }
+                    }
+                    double accuracy = (double)count * 100 / size;
+                    System.out.println(accuracy);
+                    averageAccuracy += accuracy;
+                }
+                averageAccuracy /= sets.length;
+                System.out.println("S = " + s + "; C = " + c + "; accuracy = " + averageAccuracy);
+                if (averageAccuracy > ac) {
+                    ac = averageAccuracy;
+                    selectedC = c;
+                    selectedS = s;
+                }
             }
         }
-        System.out.println((double)count * 100 / validationData.length);
+        System.out.println("c = " + selectedC + "; s" + selectedS + "; ac = " + ac);
     }
 
     private void learn(double[][] data, int[] label) {
@@ -151,6 +163,7 @@ public class Classification {
         SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
         GridCoverage2D[] masks = getNextGISCoverage(nextShp, sData);
         SVMData svmData = getTrainingAndValidationData(sData, masks);
+        sData = null;
         trainAndValidateModel(svmData);
     }
 
@@ -329,6 +342,7 @@ public class Classification {
      * @return Extracted and divided data
      */
     private SVMData getTrainingAndValidationData(SentinelData sentinelData, GridCoverage2D[] masks) {
+        // TODO: Random max count selection
         SVMData svmData = new SVMData();
         int height = sentinelData.getHeight();
         int width = sentinelData.getWidth();
@@ -340,19 +354,41 @@ public class Classification {
             for (int j = 0; j < maskPixels.length; j++) {
                 if (maskPixels[j] == 1.0F) {
                     double[] vector = sentinelData.getPixelVector(j);
-                    // Add vector to SVM data
-                    if (random.nextBoolean()) {
-                        if (++count == 10000) {
-                            break;
-                        }
-                        svmData.addTrainingData(vector, i);
-                    } else {
-                        svmData.addValidationData(vector, i);
+                    svmData.add(new SVMVector(vector, i));
+                    ++count;
+                    if (count == 3000) {
+                        break;
                     }
+                    // Add vector to SVM data
+//                    if (random.nextBoolean()) {
+//                        svmData.addTrainingData(vector, i);
+//                    } else {
+//                        svmData.addValidationData(vector, i);
+//                    }
                 }
             }
         }
         return svmData;
+    }
+
+    private class SVMVector{
+        double[] vector;
+        int label;
+
+        SVMVector(double[] vector, int label) {
+            this.vector = vector;
+            this.label = label;
+        }
+    }
+
+    private class SVMSet{
+        double[][] vectors;
+        int[] labels;
+
+        SVMSet(double[][] vectors, int[] labels) {
+            this.vectors = vectors;
+            this.labels = labels;
+        }
     }
 
 
@@ -362,69 +398,44 @@ public class Classification {
     private class SVMData{
 
         /**
-         * List of training Sentinel 2 data vectors
+         * List of data
          */
-        private List<double[]> trainingVectors;
+        private List<SVMVector> data;
 
         /**
-         * List of classes of training Sentinel 2 data vectors
-         */
-        private List<Integer> trainingClasses;
-
-        /**
-         * List of validation Sentinel 2 data vectors
-         */
-        private List<double[]> validationVectors;
-
-        /**
-         * List of classes of validation Sentinel 2 data vectors
-         */
-        private List<Integer> validationClasses;
-
-        double[][] getTrainingVectors() {
-            return this.trainingVectors.toArray(new double[trainingVectors.size()][]);
-        }
-
-        int[] getTrainingLabels() {
-            return this.trainingClasses.stream().mapToInt(i -> i).toArray();
-        }
-
-        double[][] getValidationVectors() {
-            return this.validationVectors.toArray(new double[validationClasses.size()][]);
-        }
-
-        int[] getValidationLabels() {
-            return this.validationClasses.stream().mapToInt(i -> i).toArray();
-        }
-
-        /**
-         * SVM training and validation data initializer
+         * SVM data initializer
          */
         SVMData() {
-            trainingVectors = new ArrayList<>();
-            trainingClasses = new ArrayList<>();
-            validationVectors = new ArrayList<>();
-            validationClasses = new ArrayList<>();
+            data = new LinkedList<>();
         }
 
         /**
-         * Add training data
-         * @param value Sentinel 2 values vector
-         * @param cl Data class
+         * Add vector and class label
+         * @param data data label
          */
-        void addTrainingData(double[] value, int cl) {
-            this.trainingVectors.add(value);
-            this.trainingClasses.add(cl);
+        void add(SVMVector data) {
+            this.data.add(data);
         }
 
-        /**
-         * Add validation data
-         * @param value Sentinel 2 values vector
-         * @param cl Data class
-         */
-        void addValidationData(double[] value, int cl) {
-            this.validationVectors.add(value);
-            this.validationClasses.add(cl);
+        SVMSet[] getCrossValidationData(int setsNumber) {
+            SVMSet[] sets = new SVMSet[setsNumber];
+            for (int i = 0; i < setsNumber; ++i) {
+                int size;
+                if (i == setsNumber - 1) {
+                    size = this.data.size();
+                } else {
+                    size = this.data.size() / setsNumber;
+                }
+                double[][] tempVectors = new double[size][];
+                int[] tempLabels = new int[size];
+                for (int j = 0; j < size; ++j) {
+                    SVMVector data = this.data.remove(random.nextInt(this.data.size()));
+                    tempVectors[j] = data.vector;
+                    tempLabels[j] = data.label;
+                }
+                sets[i] = new SVMSet(tempVectors, tempLabels);
+            }
+            return sets;
         }
     }
 }
