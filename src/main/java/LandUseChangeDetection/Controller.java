@@ -38,6 +38,22 @@ public class Controller {
         }
     }
 
+    public void openDownloadingForm(ActionEvent actionEvent) {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/searchAndDownloadForm.fxml"));
+        try {
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("Search and Download Sentinel 2 Data");
+            stage.setScene(new Scene(root, 600, 270));
+            stage.setResizable(false);
+            stage.getIcons().add(new Image("/icon.png"));
+            stage.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Open learn form based on OSM data
      * @param actionEvent OSM learn form opening action event

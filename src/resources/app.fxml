@@ -21,7 +21,7 @@
           </Menu>
             <Menu mnemonicParsing="false" text="Sentinel 2">
               <items>
-                <MenuItem mnemonicParsing="false" text="Download" />
+                <MenuItem fx:id="dowloadMenuItem" mnemonicParsing="false" onAction="#openDownloadingForm" text="Download" />
                   <MenuItem fx:id="levelUpMenuItem" mnemonicParsing="false" onAction="#getLevelUpFormHandler" text="Level Up Data" />
               </items>
             </Menu>
