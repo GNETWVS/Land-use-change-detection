@@ -6,7 +6,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -17,6 +19,11 @@ import java.io.File;
 import java.io.IOException;
 
 public class Controller {
+
+    /**
+     * Application form
+     */
+    public BorderPane appForm;
 
     /**
      * Show level up form
@@ -86,6 +93,36 @@ public class Controller {
             stage.setScene(new Scene(root, 450, 450));
             stage.showAndWait();
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private File beforeSentinelData;
+
+    public void selectBeforeData(ActionEvent actionEvent) {
+        DirectoryChooser dc = new DirectoryChooser();
+        this.beforeSentinelData = dc.showDialog(appForm.getScene().getWindow());
+    }
+
+    private File afterSentinelData;
+
+    public void selectAfterData(ActionEvent actionEvent) {
+        DirectoryChooser dc = new DirectoryChooser();
+        this.afterSentinelData = dc.showDialog(appForm.getScene().getWindow());
+    }
+
+    public void detectChanges(ActionEvent actionEvent) {
+        if (beforeSentinelData == null || afterSentinelData == null) {
+            return;
+        }
+        try {
+            ChangeDetector detector = new ChangeDetector(
+                    new SentinelData(beforeSentinelData, Resolution.R60m),
+                    new SentinelData(afterSentinelData, Resolution.R60m)
+            );
+            detector.getChanges();
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

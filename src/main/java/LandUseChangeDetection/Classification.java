@@ -2,6 +2,7 @@ package LandUseChangeDetection;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import org.apache.commons.lang3.ArrayUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -14,6 +15,7 @@ import org.geotools.filter.ConstantExpression;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.process.vector.VectorToRasterProcess;
 import org.geotools.referencing.CRS;
+import org.hsqldb.lib.ArrayUtil;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
@@ -24,19 +26,24 @@ import smile.classification.SVM;
 import smile.math.kernel.GaussianKernel;
 
 import java.awt.image.Raster;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
-// TODO: Serilization of singleton
-public class Classification {
+public class Classification implements Serializable {
 
     /**
      * Classification singleton instance
      */
     private static Classification instance;
 
+    /**
+     * Path ot serializable object
+     */
+    private static final File svmModelPath = new File("src/resources/model.svm");
+
+    /**
+     * SVM model
+     */
     private SVM<double[]> svm;
 
     /**
@@ -87,89 +94,160 @@ public class Classification {
             ))
     ));
 
-    private Classification() {
-        // TODO: Разобраться с sigma и penalty
-        // TODO: Grid seach (c and gamma)
-        // TODO: sigma and C selection
-        //this.svm = new SVM<double[]>(new GaussianKernel(1500), 9000, 4, SVM.Multiclass.ONE_VS_ALL);
-        //this.svm = new SVM<double[]>(new smile.math.kernel.)
+    private Classification(SVM<double[]> svm) {
+        this.svm = svm;
     }
 
+    /**
+     * SVM classification singleton
+     * @return Classification instance
+     */
     public static Classification getInstance() {
         if (instance == null) {
-            instance = new Classification();
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(svmModelPath))) {
+                SVM<double[]>svm = (SVM<double[]>) ois.readObject(); // TODO: Рабобраться с ошибкой
+                instance = new Classification(svm);
+            } catch (ClassNotFoundException | IOException e) {
+                instance = new Classification(null);
+            }
         }
         return instance;
     }
 
+    /**
+     * Serialize trained SVM model
+     */
+    private void serializeSVMObject() throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(svmModelPath))) {
+            oos.writeObject(this.svm);
+        }
+    }
+
+    public int predict(double[] vector) {
+        return this.svm.predict(vector);
+    }
+
+    public int[] predict(double[][] vectors) {
+        return this.svm.predict(vectors);
+    }
+
     private void trainAndValidateModel(SVMData svmData) {
-        SVMSet[] sets = svmData.getCrossValidationData(5);
         // TODO: Grid search values range
+        SVM<double[]> selectedSVM = null;
         double selectedS = 0;
         double selectedC = 0;
-        double ac = 0;
+        double totalAccuracy = 0;
+        double[] classAccuracies = new double[LAND_USE_CLASSES.size()];
+        SVMSet[] sets = svmData.getCrossValidationData();
+        // Grid search and
         for (double s = 4548; s == 4548; s += 500) {
             for (double c = 4096; c == 4096; c *= 2) {
-                double averageAccuracy = 0;
-                for (int i = 0; i < sets.length; ++i){
-                    // Learn and validate using cross validation
+                double accuracy = 0;
+                double maxAccuracy = 0;
+                double[] accuracies = new double[LAND_USE_CLASSES.size()];
+                double[] maxAccuracies = new double[LAND_USE_CLASSES.size()];
+                SVM<double[]> currentSVM = null;
+                // Cross validation
+                for (int i = 0; i < sets.length; ++i) {
                     SVM<double[]> svm = new SVM<>(new GaussianKernel(s), c, LAND_USE_CLASSES.size(), SVM.Multiclass.ONE_VS_ALL);
-                    svm.learn(sets[i].vectors, sets[i].labels);
-                    svm.finish();
-                    int count = 0;
-                    int size = 0;
-                    // Cross validation
-                    for (int j = 0; j < sets.length; ++j){
-                        if (i == j) {
-                            continue;
-                        }
-                        size += sets[j].labels.length;
-                        for (int l = 0; l < sets[j].labels.length; ++l) {
-                            if (svm.predict(sets[j].vectors[l]) == sets[j].labels[l]) {
-                                ++count;
-                            }
+                    for (int j = 0; j < sets.length; ++j) {
+                        if (j != i) {
+                            svm.learn(sets[j].vectors, sets[j].labels);
                         }
                     }
-                    double accuracy = (double)count * 100 / size;
-                    System.out.println(accuracy);
-                    averageAccuracy += accuracy;
-                    if (accuracy > ac) {
-                        this.svm = svm;
+                    svm.finish();
+
+
+                    SVM<double[]> waterSVM = new SVM<>(new GaussianKernel(s), c);
+                    for (int j = 0; j < sets.length; ++j) {
+                        if (i != j) {
+                            int[] waterLabels = new int[sets[j].labels.length];
+                            for (int k = 0; k < waterLabels.length; ++k) {
+                                if (sets[j].labels[k] == 0) {
+                                    waterLabels[k] = 0;
+                                } else {
+                                    waterLabels[k] = 1;
+                                }
+                            }
+                            waterSVM.learn(sets[j].vectors, waterLabels);
+                        }
+                    }
+
+                    int[] predictions = svm.predict(sets[i].vectors);
+                    int[] counts = new int[LAND_USE_CLASSES.size()];
+                    int[] sizes = new int[LAND_USE_CLASSES.size()];
+                    for (int j = 0; j < predictions.length; ++j) {
+                        if (sets[i].labels[j] == predictions[j]) {
+                            ++counts[predictions[j]];
+                        }
+                        ++sizes[sets[i].labels[j]];
+                    }
+
+                    predictions = waterSVM.predict(sets[i].vectors);
+                    int wCount = 0;
+                    for (int j = 0; j < predictions.length; ++j) {
+                        if (sets[i].labels[j] == 0 && predictions[j] == 0){
+                            ++wCount;
+                        }
+                    }
+
+                    int count = 0;
+                    for (int val : counts) {
+                        count += val;
+                    }
+                    double currentAccuracy = (double) count / predictions.length;
+                    accuracy += currentAccuracy;
+                    double[] currentAccuracies = new double[LAND_USE_CLASSES.size()];
+                    for (int j = 0; j < accuracies.length; ++j) {
+                        currentAccuracies[j] = (double)counts[j] / sizes[j];
+                        accuracies[j] += currentAccuracies[j];
+                    }
+                    System.out.println((double)wCount / predictions.length);
+                    if (currentAccuracy > maxAccuracy) {
+                        maxAccuracy = currentAccuracy;
+                        maxAccuracies = currentAccuracies;
+                        currentSVM = svm;
                     }
                 }
-                averageAccuracy /= sets.length;
-                System.out.println("S = " + s + "; C = " + c + "; accuracy = " + averageAccuracy);
-                if (averageAccuracy > ac) {
-                    ac = averageAccuracy;
+                accuracy = accuracy / sets.length;
+                for (int i = 0; i < accuracies.length; ++i) {
+                    accuracies[i] /= sets.length;
+                }
+                System.out.println("S = " + s + "; C = " + c + "; accuracy = " + accuracy);
+                System.out.println(Arrays.toString(accuracies));
+                System.out.println("MAX " + maxAccuracy + " Classes: " + Arrays.toString(maxAccuracies));
+                if (accuracy > totalAccuracy) {
+                    totalAccuracy = accuracy;
+                    classAccuracies = accuracies;
+                    selectedSVM = currentSVM;
                     selectedC = c;
                     selectedS = s;
                 }
             }
         }
-        System.out.println("c = " + selectedC + "; s" + selectedS + "; ac = " + ac);
-        for (int z = 0; z < 3; z++) {
-            sets = svmData.getCrossValidationData(5);
-            for (int i = 0; i < 1; ++i) {
-                svm.learn(sets[i].vectors, sets[i].labels);
-                svm.finish();
-                int count = 0;
-                int size = 0;
-                // Cross validation
-                for (int j = 0; j < sets.length; ++j) {
-                    if (i == j) {
-                        continue;
-                    }
-                    size += sets[j].labels.length;
-                    for (int l = 0; l < sets[j].labels.length; ++l) {
-                        if (svm.predict(sets[j].vectors[l]) == sets[j].labels[l]) {
-                            ++count;
-                        }
-                    }
-                }
-                double accuracy = (double) count * 100 / size;
-                System.out.println(accuracy);
-            }
+        System.out.println("c = " + selectedC + "; s" + selectedS + "; ac = " + totalAccuracy + " c: " + Arrays.toString(classAccuracies));
+        // Online training
+        sets = svmData.getCrossValidationData();
+        for (int i = 1; i < sets.length; ++i) {
+            selectedSVM.learn(sets[i].vectors, sets[i].labels);
         }
+        selectedSVM.finish();
+        int[] predictions = selectedSVM.predict(sets[0].vectors);
+        int[] counts = new int[LAND_USE_CLASSES.size()];
+        int[] sizes = new int[LAND_USE_CLASSES.size()];
+        for (int j = 0; j < predictions.length; ++j) {
+            if (sets[0].labels[j] == predictions[j]) {
+                ++counts[predictions[j]];
+            }
+            ++sizes[sets[0].labels[j]];
+        }
+        int count = 0;
+        for (int val : counts) {
+            count += val;
+        }
+        double currentAccuracy = (double) count / predictions.length;
+        System.out.println(currentAccuracy);
+        this.svm = selectedSVM;
     }
 
     private void learn(double[][] data, int[] label) {
@@ -185,12 +263,20 @@ public class Classification {
         }
     }
 
+    /**
+     * Train svm model by NextGIS shapefiles
+     * @param nextShp
+     * @param s2DataFile
+     * @throws Exception
+     */
     public void trainByNextGISData(File nextShp, File s2DataFile) throws Exception {
         SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
         GridCoverage2D[] masks = getNextGISCoverage(nextShp, sData);
         SVMData svmData = getTrainingAndValidationData(sData, masks);
         sData = null;
         trainAndValidateModel(svmData);
+        svmData = null;
+        serializeSVMObject();
     }
 
     /**
@@ -381,16 +467,6 @@ public class Classification {
                 if (maskPixels[j] == 1.0F) {
                     double[] vector = sentinelData.getPixelVector(j);
                     svmData.add(new SVMVector(vector, i));
-                    //++count;
-                    //if (count == 10000) {
-                    //    break;
-                    //}
-                    // Add vector to SVM data
-//                    if (random.nextBoolean()) {
-//                        svmData.addTrainingData(vector, i);
-//                    } else {
-//                        svmData.addValidationData(vector, i);
-//                    }
                 }
             }
         }
@@ -407,6 +483,9 @@ public class Classification {
         }
     }
 
+    /**
+     * SVM training or validation set
+     */
     private class SVMSet{
         double[][] vectors;
         int[] labels;
@@ -443,14 +522,18 @@ public class Classification {
             this.data.add(data);
         }
 
-        SVMSet[] getCrossValidationData(int setsNumber) {
-            SVMSet[] sets = new SVMSet[setsNumber];
-            for (int i = 0; i < setsNumber; ++i) {
+        /**
+         * Get training and validation data in relation 20 : 80
+         * @return Training and validation sets
+         */
+        SVMSet[] getCrossValidationData() {
+            SVMSet[] sets = new SVMSet[5];
+            for (int i = 0; i < sets.length; ++i) {
                 int size;
-                if (this.data.size() < 3000) {
+                if (this.data.size() < 1000) {
                     size = this.data.size();
                 } else {
-                    size = 3000;
+                    size = 1000;
                 }
                 double[][] tempVectors = new double[size][];
                 int[] tempLabels = new int[size];

@@ -6,8 +6,10 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
 import org.gdal.osr.SpatialReference;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.coverageio.jp2k.JP2KReader;
 import org.opengis.geometry.Envelope;
+import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.awt.*;
@@ -18,6 +20,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Sentinel data resolutions
@@ -283,6 +286,23 @@ public class SentinelData {
             if (writer != null) {
                 writer.close();
             }
+        }
+    }
+
+    /**
+     * Crop bands
+     * @param envelope cropping envelope
+     */
+    public void cropBands(Envelope envelope) {
+        final CoverageProcessor processor = new CoverageProcessor();
+        ParameterValueGroup params = processor.getOperation("CoverageCrop").getParameters();
+        params.parameter("Envelope").setValue(envelope);
+        ListIterator<GridCoverage2D> it = this.bands.listIterator();
+        while (it.hasNext()) {
+            GridCoverage2D band = it.next();
+            params.parameter("Source").setValue(band);
+            band = (GridCoverage2D) processor.doOperation(params);
+            it.set(band);
         }
     }
 }
