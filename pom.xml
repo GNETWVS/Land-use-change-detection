@@ -144,11 +144,19 @@
             <version>0.7.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.odata4j/odata4j-jersey -->
+        <dependency>
+            <groupId>org.odata4j</groupId>
+            <artifactId>odata4j-jersey</artifactId>
+            <version>0.7.0</version>
+        </dependency>
+
         <dependency>
             <groupId>it.geosolutions.jaiext.algebra</groupId>
             <artifactId>jt-algebra</artifactId>
             <version>${jai.version}</version>
         </dependency>
+
 
         <!--&lt;!&ndash; https://mvnrepository.com/artifact/commons-codec/commons-codec &ndash;&gt;-->
         <!--<dependency>-->

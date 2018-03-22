@@ -1,10 +1,37 @@
 package LandUseChangeDetection.forms;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
+import org.odata4j.consumer.ODataConsumer;
+import org.odata4j.consumer.ODataConsumers;
+import org.odata4j.consumer.behaviors.BasicAuthenticationBehavior;
+import org.odata4j.core.OEntity;
+
+import java.util.Date;
 
 public class SearchAndDownloadForm {
 
+    /**
+     * ESA open hub api url
+     */
     private static final String esaOpenHubURL = "https://scihub.copernicus.eu/apihub/odata/v1/";
+    public PasswordField passwordTextField;
+    public TextField loginTextField;
+
+    /**
+     * OData consumer builder
+     */
+    private static ODataConsumer.Builder consumerBuilder = ODataConsumers.newBuilder(esaOpenHubURL);
+    public DatePicker sensingStartDate;
+
+    /**
+     * OData consumer
+     */
+    private ODataConsumer consumer;
 
     @FXML
     void initialize(){
@@ -79,5 +106,49 @@ public class SearchAndDownloadForm {
 //            System.out.println("Entry:" + ce.getProperties());
 //        }
 //        SearchFactory f = new SearchFactoryImpl().
+    }
+
+    /**
+     * Check for login and password filling
+     * @return empty or not
+     */
+    private boolean checkLoginAndPassword() {
+        return loginTextField.getText().length() != 0 && passwordTextField.getText().length() != 0;
+    }
+
+    /**
+     * Login acton handler
+     * @param actionEvent login action event
+     */
+    public void loginHandler(ActionEvent actionEvent) {
+        this.loginTextField.setDisable(true);
+        this.passwordTextField.setDisable(true);
+        if (!checkLoginAndPassword()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Empty login or password");
+            alert.setHeaderText("Error, empty login or password fields");
+            alert.setContentText("Please, fill empty field or sing up in https://scihub.copernicus.eu/");
+            alert.showAndWait();
+            this.loginTextField.setDisable(false);
+            this.passwordTextField.setDisable(false);
+
+            return;
+        }
+        // Create consumer
+        String login = loginTextField.getText();
+        String password = passwordTextField.getText();
+        consumerBuilder.setClientBehaviors(new BasicAuthenticationBehavior(login, password));
+        this.consumer = consumerBuilder.build();
+    }
+
+
+    public void searchDataHandler(ActionEvent actionEvent) {
+        System.out.println(sensingStartDate.getEditor().getText());
+        for (OEntity entity : consumer.getEntities("Products")
+                .filter("startswith(Name,'S2') and year(IngestionDate) eq 2017")
+                .expand("Nodes")
+                .execute()) {
+            System.out.println(entity.getProperties());
+        }
     }
 }
