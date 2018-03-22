@@ -5,15 +5,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
 import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import org.esa.s2tbx.dataio.s2.Sentinel2ProductReader;
-import org.esa.s2tbx.dataio.s2.l1c.Sentinel2L1CProductReader;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +54,7 @@ public class Controller {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+        }
 
     /**
      * Open learn form based on OSM data

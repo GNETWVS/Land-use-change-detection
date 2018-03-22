@@ -64,6 +64,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <geotools.version>20-SNAPSHOT</geotools.version>
+        <jai.version>1.0.3</jai.version>
         <s2tbx.version>7.0.0-SNAPSHOT</s2tbx.version>
     </properties>
 
@@ -136,31 +137,86 @@
             <version>1.5.0</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.solr/solr-solrj -->
+        <!-- https://mvnrepository.com/artifact/org.odata4j/odata4j-core -->
         <dependency>
-            <groupId>org.apache.solr</groupId>
-            <artifactId>solr-solrj</artifactId>
-            <version>7.2.1</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.olingo/odata-client-core -->
-        <dependency>
-            <groupId>org.apache.olingo</groupId>
-            <artifactId>odata-client-core</artifactId>
-            <version>4.4.0</version>
+            <groupId>org.odata4j</groupId>
+            <artifactId>odata4j-core</artifactId>
+            <version>0.7.0</version>
         </dependency>
 
         <dependency>
-            <groupId>org.esa.s2tbx</groupId>
-            <artifactId>s2tbx</artifactId>
-            <version>${s2tbx.version}</version>
+            <groupId>it.geosolutions.jaiext.algebra</groupId>
+            <artifactId>jt-algebra</artifactId>
+            <version>${jai.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.esa.s2tbx</groupId>
-            <artifactId>s2tbx-s2msi-reader</artifactId>
-            <version>${s2tbx.version}</version>
-        </dependency>
+        <!--&lt;!&ndash; https://mvnrepository.com/artifact/commons-codec/commons-codec &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>commons-codec</groupId>-->
+            <!--<artifactId>commons-codec</artifactId>-->
+            <!--<version>1.11</version>-->
+        <!--</dependency>-->
+
+        <!--<dependency>-->
+            <!--<groupId>org.apache.solr</groupId>-->
+            <!--<artifactId>solr-solrj</artifactId>-->
+            <!--<version>7.1.0</version>-->
+            <!--<type>jar</type>-->
+            <!--<scope>compile</scope>-->
+        <!--</dependency>-->
+
+        <!--<dependency>-->
+            <!--<groupId>org.slf4j</groupId>-->
+            <!--<artifactId>slf4j-simple</artifactId>-->
+            <!--<version>1.7.5</version>-->
+        <!--</dependency>-->
+
+        <!--&lt;!&ndash; https://mvnrepository.com/artifact/org.apache.solr/solr-dataimporthandler &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.solr</groupId>-->
+            <!--<artifactId>solr-dataimporthandler</artifactId>-->
+            <!--<version>7.1.0</version>-->
+            <!--<scope>test</scope>-->
+        <!--</dependency>-->
+
+        <!--&lt;!&ndash; https://mvnrepository.com/artifact/org.apache.olingo/odata-commons-api &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.olingo</groupId>-->
+            <!--<artifactId>odata-commons-api</artifactId>-->
+            <!--<version>4.4.0</version>-->
+        <!--</dependency>-->
+        <!--&lt;!&ndash; https://mvnrepository.com/artifact/org.apache.olingo/odata-commons-core &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.olingo</groupId>-->
+            <!--<artifactId>odata-commons-core</artifactId>-->
+            <!--<version>4.4.0</version>-->
+        <!--</dependency>-->
+        <!--&lt;!&ndash; https://mvnrepository.com/artifact/org.apache.olingo/odata-client-api &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.olingo</groupId>-->
+            <!--<artifactId>odata-client-api</artifactId>-->
+            <!--<version>4.4.0</version>-->
+        <!--</dependency>-->
+
+
+        <!--&lt;!&ndash; https://mvnrepository.com/artifact/org.apache.olingo/odata-client-core &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.olingo</groupId>-->
+            <!--<artifactId>odata-client-core</artifactId>-->
+            <!--<version>4.4.0</version>-->
+        <!--</dependency>-->
+
+        <!--&lt;!&ndash;<dependency>&ndash;&gt;-->
+            <!--&lt;!&ndash;<groupId>org.esa.s2tbx</groupId>&ndash;&gt;-->
+            <!--&lt;!&ndash;<artifactId>s2tbx</artifactId>&ndash;&gt;-->
+            <!--&lt;!&ndash;<version>${s2tbx.version}</version>&ndash;&gt;-->
+        <!--&lt;!&ndash;</dependency>&ndash;&gt;-->
+
+        <!--&lt;!&ndash;<dependency>&ndash;&gt;-->
+            <!--&lt;!&ndash;<groupId>org.esa.s2tbx</groupId>&ndash;&gt;-->
+            <!--&lt;!&ndash;<artifactId>s2tbx-s2msi-reader</artifactId>&ndash;&gt;-->
+            <!--&lt;!&ndash;<version>${s2tbx.version}</version>&ndash;&gt;-->
+        <!--&lt;!&ndash;</dependency>&ndash;&gt;-->
 
     </dependencies>
 </project>

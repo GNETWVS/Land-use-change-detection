@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -164,15 +165,26 @@ public class LevelUpForm {
                     }
                     updateMessage("Canceled");
                     updateProgress(0.0, 100.0);
+                    // Show finished info
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setHeaderText("Level up Finished");
+                    alert.setTitle("Level up process finished");
+                    alert.setContentText("Level up process to Level-2A Product finished");
+                    alert.showAndWait();
+                } catch (Exception e) {
+                    SentinelLevelUpdater.SEMAPHORE.release();
+                    // Show error info
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(e.getMessage());
+                    alert.setContentText(Arrays.toString(e.getStackTrace()));
+                    alert.showAndWait();
+                } finally {
+                    SentinelLevelUpdater.SEMAPHORE.release();
                     openSentinel1.setDisable(false);
                     cancelButton.setDisable(true);
                     create2ADataButton.setDisable(false);
                     resChoiceBox.setDisable(false);
-                } catch (Exception e) {
-                    SentinelLevelUpdater.SEMAPHORE.release();
-                    e.printStackTrace();
-                } finally {
-                    SentinelLevelUpdater.SEMAPHORE.release();
                 }
                 return null;
             }

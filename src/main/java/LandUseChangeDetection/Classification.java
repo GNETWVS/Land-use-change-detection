@@ -2,7 +2,6 @@ package LandUseChangeDetection;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
-import org.apache.commons.lang3.ArrayUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -12,10 +11,10 @@ import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.filter.ConstantExpression;
+import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.process.vector.VectorToRasterProcess;
 import org.geotools.referencing.CRS;
-import org.hsqldb.lib.ArrayUtil;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
@@ -131,7 +130,7 @@ public class Classification implements Serializable {
         return this.svm.predict(vectors);
     }
 
-    private void trainAndValidateModel(SVMData svmData) {
+    private void trainAndValidateModel(SVMData svmData) throws IOException {
         // TODO: Grid search values range
         SVM<double[]> selectedSVM = null;
         double selectedS = 0;
@@ -139,9 +138,11 @@ public class Classification implements Serializable {
         double totalAccuracy = 0;
         double[] classAccuracies = new double[LAND_USE_CLASSES.size()];
         SVMSet[] sets = svmData.getCrossValidationData();
+        File result = new File("C:\\Users\\Arthur\\Desktop\\res.txt"); // TODO: Delete
+        BufferedWriter writer = new BufferedWriter(new FileWriter(result));
         // Grid search and
-        for (double s = 4548; s == 4548; s += 500) {
-            for (double c = 4096; c == 4096; c *= 2) {
+        for (double s = 0.5; s <= Math.pow(2, 15); s *= 2) {
+            for (double c = 0.5; c <= Math.pow(2, 15); c *= 2) {
                 double accuracy = 0;
                 double maxAccuracy = 0;
                 double[] accuracies = new double[LAND_USE_CLASSES.size()];
@@ -157,22 +158,6 @@ public class Classification implements Serializable {
                     }
                     svm.finish();
 
-
-                    SVM<double[]> waterSVM = new SVM<>(new GaussianKernel(s), c);
-                    for (int j = 0; j < sets.length; ++j) {
-                        if (i != j) {
-                            int[] waterLabels = new int[sets[j].labels.length];
-                            for (int k = 0; k < waterLabels.length; ++k) {
-                                if (sets[j].labels[k] == 0) {
-                                    waterLabels[k] = 0;
-                                } else {
-                                    waterLabels[k] = 1;
-                                }
-                            }
-                            waterSVM.learn(sets[j].vectors, waterLabels);
-                        }
-                    }
-
                     int[] predictions = svm.predict(sets[i].vectors);
                     int[] counts = new int[LAND_USE_CLASSES.size()];
                     int[] sizes = new int[LAND_USE_CLASSES.size()];
@@ -181,14 +166,6 @@ public class Classification implements Serializable {
                             ++counts[predictions[j]];
                         }
                         ++sizes[sets[i].labels[j]];
-                    }
-
-                    predictions = waterSVM.predict(sets[i].vectors);
-                    int wCount = 0;
-                    for (int j = 0; j < predictions.length; ++j) {
-                        if (sets[i].labels[j] == 0 && predictions[j] == 0){
-                            ++wCount;
-                        }
                     }
 
                     int count = 0;
@@ -202,7 +179,7 @@ public class Classification implements Serializable {
                         currentAccuracies[j] = (double)counts[j] / sizes[j];
                         accuracies[j] += currentAccuracies[j];
                     }
-                    System.out.println((double)wCount / predictions.length);
+//                    System.out.println((double)wCount / predictions.length);
                     if (currentAccuracy > maxAccuracy) {
                         maxAccuracy = currentAccuracy;
                         maxAccuracies = currentAccuracies;
@@ -213,9 +190,7 @@ public class Classification implements Serializable {
                 for (int i = 0; i < accuracies.length; ++i) {
                     accuracies[i] /= sets.length;
                 }
-                System.out.println("S = " + s + "; C = " + c + "; accuracy = " + accuracy);
-                System.out.println(Arrays.toString(accuracies));
-                System.out.println("MAX " + maxAccuracy + " Classes: " + Arrays.toString(maxAccuracies));
+                writer.write("S = " + s + "; C = " + c + "; accuracy = " + accuracy + " " + Arrays.toString(accuracies));
                 if (accuracy > totalAccuracy) {
                     totalAccuracy = accuracy;
                     classAccuracies = accuracies;
@@ -223,6 +198,8 @@ public class Classification implements Serializable {
                     selectedC = c;
                     selectedS = s;
                 }
+                writer.write("RES: S = " + selectedS + "; C" + selectedC + "; ac = " + totalAccuracy + " " + Arrays.toString(classAccuracies) + "\n");
+                writer.flush();
             }
         }
         System.out.println("c = " + selectedC + "; s" + selectedS + "; ac = " + totalAccuracy + " c: " + Arrays.toString(classAccuracies));
@@ -246,8 +223,9 @@ public class Classification implements Serializable {
             count += val;
         }
         double currentAccuracy = (double) count / predictions.length;
-        System.out.println(currentAccuracy);
+        writer.write("" + currentAccuracy);
         this.svm = selectedSVM;
+        writer.close();
     }
 
     private void learn(double[][] data, int[] label) {
@@ -305,7 +283,7 @@ public class Classification implements Serializable {
      * @throws FactoryException Cannot create feature builder
      * @throws TransformException Cannot change CRS
      */
-    private GridCoverage2D[] getNextGISCoverage(File nextShp, SentinelData sentinelData) throws IOException, FactoryException, TransformException {
+    private GridCoverage2D[] getNextGISCoverage(File nextShp, SentinelData sentinelData) throws Exception {
         // Checking for directory
         if (!nextShp.isDirectory()) {
             throw new FileNotFoundException("Error, NextSHP file is not directory");
@@ -367,10 +345,20 @@ public class Classification implements Serializable {
                 sentinelData.getGridDimension(), sentinelData.getEnvelope(), "waterMask", null);
         masks[0] = waterCoverage;
         for (int i = 1; i < masks.length; i++) {
-            masks[i] = VectorToRasterProcess.process(simpleFeatureCollections[i], ConstantExpression.constant(1),
+            masks[i] = VectorToRasterProcess.process(simpleFeatureCollections[i], ConstantExpression.constant(i),
                     sentinelData.getGridDimension(), sentinelData.getEnvelope(), String.valueOf(i), null);
         }
 
+        // MergeMasks
+        GridCoverage2D cov = sentinelData.getCloudsAndSnowMask();
+        float[] maskPixels = new float[cov.getRenderedImage().getHeight() * cov.getRenderedImage().getWidth()];
+        cov.getRenderedImage().getData().getPixels(cov.getRenderedImage().getMinX(), cov.getRenderedImage().getMinY(), cov.getRenderedImage().getWidth(), cov.getRenderedImage().getHeight(), maskPixels);
+        for (int j = 0; j < maskPixels.length; j++) {
+            System.out.println(maskPixels[j]);
+        }
+        // TODO: Mask
+        GeoTiffWriter writer = new GeoTiffWriter(new File("C:\\Users\\Arthur\\Desktop\\1\\1.tif"));
+        writer.write(cov, null);
         return masks;
     }
 
@@ -454,12 +442,11 @@ public class Classification implements Serializable {
      * @return Extracted and divided data
      */
     private SVMData getTrainingAndValidationData(SentinelData sentinelData, GridCoverage2D[] masks) {
-        // TODO: Random max count selection
         SVMData svmData = new SVMData();
         int height = sentinelData.getHeight();
         int width = sentinelData.getWidth();
+
         for (int i = 0; i < masks.length; i++) {
-            //int count = 0;
             float[] maskPixels = new float[height * width];
             Raster mask = masks[i].getRenderedImage().getData();
             mask.getPixels(mask.getMinX(), mask.getMinY(), width, height, maskPixels);

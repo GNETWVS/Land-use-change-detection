@@ -1,19 +1,25 @@
 package LandUseChangeDetection;
 
+import it.geosolutions.jaiext.JAIExt;
 import org.apache.commons.io.FilenameUtils;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
 import org.gdal.osr.SpatialReference;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.coverageio.jp2k.JP2KReader;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.geometry.Envelope;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import javax.media.jai.JAI;
+import javax.media.jai.RenderedOp;
 import java.awt.*;
 import java.awt.image.Raster;
+import java.awt.image.renderable.ParameterBlock;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -35,6 +41,7 @@ public class SentinelData {
 
     static {
         gdal.AllRegister();
+        JAIExt.initJAIEXT();
     }
 
     /**
@@ -172,12 +179,16 @@ public class SentinelData {
             throw new NullPointerException("Error, incorrect SL2 Data");
         }
         // TODO: Filter bands
+        // TODO: XML Reader
         bands = new ArrayList<>(files.length);
         for (File bandFile : files) {
             if (FilenameUtils.getExtension(bandFile.getName()).equals(JP2K_EXTENSION)) {
                 bands.add(openSentinelData(bandFile));
             }
         }
+        // TODO: Select mask for snow and clouds
+        this.cloudsMaskFile = new File("C:\\Users\\Arthur\\Desktop\\CW\\Data\\S2A_MSIL2A_20170924T083701_N0205_R064_T37UDB_20170924T083955.SAFE\\GRANULE\\L2A_T37UDB_A011787_20170924T083955\\QI_DATA\\L2A_T37UDB_20170924T083701_CLD_60m.jp2");
+        this.snowMaskFile = new File("C:\\Users\\Arthur\\Desktop\\CW\\Data\\S2A_MSIL2A_20170924T083701_N0205_R064_T37UDB_20170924T083955.SAFE\\GRANULE\\L2A_T37UDB_A011787_20170924T083955\\QI_DATA\\L2A_T37UDB_20170924T083701_SNW_60m.jp2");
     }
 
     /**
@@ -304,5 +315,26 @@ public class SentinelData {
             band = (GridCoverage2D) processor.doOperation(params);
             it.set(band);
         }
+    }
+
+    private File cloudsMaskFile;
+    private File snowMaskFile;
+
+    public GridCoverage2D getCloudsAndSnowMask() throws Exception {
+        GridCoverage2D cloudsMask = openSentinelData(cloudsMaskFile);
+        GridCoverage2D snowMask = openSentinelData(snowMaskFile);
+        if (resolution == Resolution.R10m) {
+            // TODO: Interpolar
+        }
+        // JAI operations
+        ParameterBlock maskOp = new ParameterBlock();
+        maskOp.addSource(cloudsMask.getRenderedImage());
+        maskOp.addSource(snowMask.getRenderedImage());
+        RenderedOp cloudAndSnowMask = JAI.create("Or", maskOp);
+
+        GridCoverageFactory factory = new GridCoverageFactory();
+        ReferencedEnvelope envelope = new ReferencedEnvelope(cloudsMask.getEnvelope());
+
+        return factory.create("CloudAndSnowMask", cloudAndSnowMask, envelope);
     }
 }
