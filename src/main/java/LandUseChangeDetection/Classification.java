@@ -3,6 +3,7 @@ package LandUseChangeDetection;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.data.DataStore;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -13,6 +14,7 @@ import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.filter.ConstantExpression;
 import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.process.vector.VectorToRasterProcess;
 import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
@@ -24,7 +26,10 @@ import org.opengis.referencing.operation.TransformException;
 import smile.classification.SVM;
 import smile.math.kernel.GaussianKernel;
 
+import javax.media.jai.JAI;
+import javax.media.jai.RenderedOp;
 import java.awt.image.Raster;
+import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
 import java.util.*;
 
@@ -249,8 +254,8 @@ public class Classification implements Serializable {
      */
     public void trainByNextGISData(File nextShp, File s2DataFile) throws Exception {
         SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
-        GridCoverage2D[] masks = getNextGISCoverage(nextShp, sData);
-        SVMData svmData = getTrainingAndValidationData(sData, masks);
+        GridCoverage2D mask = getNextGISCoverage(nextShp, sData);
+        SVMData svmData = getTrainingAndValidationData(sData, mask);
         sData = null;
         trainAndValidateModel(svmData);
         svmData = null;
@@ -283,7 +288,7 @@ public class Classification implements Serializable {
      * @throws FactoryException Cannot create feature builder
      * @throws TransformException Cannot change CRS
      */
-    private GridCoverage2D[] getNextGISCoverage(File nextShp, SentinelData sentinelData) throws Exception {
+    private GridCoverage2D getNextGISCoverage(File nextShp, SentinelData sentinelData) throws Exception {
         // Checking for directory
         if (!nextShp.isDirectory()) {
             throw new FileNotFoundException("Error, NextSHP file is not directory");
@@ -345,21 +350,20 @@ public class Classification implements Serializable {
                 sentinelData.getGridDimension(), sentinelData.getEnvelope(), "waterMask", null);
         masks[0] = waterCoverage;
         for (int i = 1; i < masks.length; i++) {
-            masks[i] = VectorToRasterProcess.process(simpleFeatureCollections[i], ConstantExpression.constant(i),
+            masks[i] = VectorToRasterProcess.process(simpleFeatureCollections[i], ConstantExpression.constant((int)Math.pow(2, i)),
                     sentinelData.getGridDimension(), sentinelData.getEnvelope(), String.valueOf(i), null);
         }
 
-        // MergeMasks
-        GridCoverage2D cov = sentinelData.getCloudsAndSnowMask();
-        float[] maskPixels = new float[cov.getRenderedImage().getHeight() * cov.getRenderedImage().getWidth()];
-        cov.getRenderedImage().getData().getPixels(cov.getRenderedImage().getMinX(), cov.getRenderedImage().getMinY(), cov.getRenderedImage().getWidth(), cov.getRenderedImage().getHeight(), maskPixels);
-        for (int j = 0; j < maskPixels.length; j++) {
-            System.out.println(maskPixels[j]);
+        // Merge masks
+        ParameterBlock maskOp = new ParameterBlock();
+        for (GridCoverage2D grid : masks) {
+            maskOp.addSource(grid.getRenderedImage());
         }
-        // TODO: Mask
-        GeoTiffWriter writer = new GeoTiffWriter(new File("C:\\Users\\Arthur\\Desktop\\1\\1.tif"));
-        writer.write(cov, null);
-        return masks;
+        RenderedOp op = JAI.create("add", maskOp);
+        GridCoverageFactory factory = new GridCoverageFactory();
+        ReferencedEnvelope envelope = new ReferencedEnvelope(masks[0].getEnvelope());
+
+        return factory.create("ClassesMask", op, envelope);
     }
 
     /**
@@ -438,22 +442,30 @@ public class Classification implements Serializable {
     /**
      * Extract training data and divide to training and validation data
      * @param sentinelData Sentinel 2 Data
-     * @param masks Classes masks
+     * @param mask Classes masks
      * @return Extracted and divided data
      */
-    private SVMData getTrainingAndValidationData(SentinelData sentinelData, GridCoverage2D[] masks) {
+    private SVMData getTrainingAndValidationData(SentinelData sentinelData, GridCoverage2D mask) throws Exception {
         SVMData svmData = new SVMData();
         int height = sentinelData.getHeight();
         int width = sentinelData.getWidth();
-
-        for (int i = 0; i < masks.length; i++) {
-            float[] maskPixels = new float[height * width];
-            Raster mask = masks[i].getRenderedImage().getData();
-            mask.getPixels(mask.getMinX(), mask.getMinY(), width, height, maskPixels);
-            for (int j = 0; j < maskPixels.length; j++) {
-                if (maskPixels[j] == 1.0F) {
-                    double[] vector = sentinelData.getPixelVector(j);
-                    svmData.add(new SVMVector(vector, i));
+        float[] maskPixels = new float[height * width];
+        float[] availablePixels = new float[height * width];
+        // Get cloud and snow mask
+        Raster cloudsAndSnowRaster = sentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
+        cloudsAndSnowRaster.getPixels(cloudsAndSnowRaster.getMinX(), cloudsAndSnowRaster.getMinY(), width, height, availablePixels);
+        // Get classes mask
+        Raster maskRaster = mask.getRenderedImage().getData();
+        maskRaster.getPixels(maskRaster.getMinX(), maskRaster.getMinY(), width, height, maskPixels);
+        for (int i = 0; i < maskPixels.length; ++i) {
+            int c = (int)maskPixels[i];
+            if (availablePixels[i] == 0.0F && c > 0 && c <= Math.pow(2, LAND_USE_CLASSES.size())) {
+                double[] vector = sentinelData.getPixelVector(i);
+                for (int j = 0; j < LAND_USE_CLASSES.size(); ++j) {
+                    if (Math.pow(2, j) == c) {
+                        svmData.add(new SVMVector(vector, j));
+                        break;
+                    }
                 }
             }
         }

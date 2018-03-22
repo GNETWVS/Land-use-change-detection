@@ -317,24 +317,53 @@ public class SentinelData {
         }
     }
 
+    /**
+     * Clouds mask file
+     */
     private File cloudsMaskFile;
+
+    /**
+     * Snow mask file
+     */
     private File snowMaskFile;
 
+    /**
+     * Low value for excluding values
+     */
+    private static final Double BORDER_VALUE = 90.0;
+
+    /**
+     * Clouds and snow mask
+     */
+    private GridCoverage2D cloudAndSnowMask;
+
+    /**
+     * Get clouds and snow mask
+     * @return clouds and snow mask
+     */
     public GridCoverage2D getCloudsAndSnowMask() throws Exception {
-        GridCoverage2D cloudsMask = openSentinelData(cloudsMaskFile);
-        GridCoverage2D snowMask = openSentinelData(snowMaskFile);
-        if (resolution == Resolution.R10m) {
-            // TODO: Interpolar
+        if (this.cloudAndSnowMask == null) {
+            GridCoverage2D cloudsMask = openSentinelData(cloudsMaskFile);
+            GridCoverage2D snowMask = openSentinelData(snowMaskFile);
+            if (resolution == Resolution.R10m) {
+                // TODO: Interpolar
+            }
+            // JAI operations
+            ParameterBlock maskOp = new ParameterBlock();
+            maskOp.addSource(cloudsMask.getRenderedImage());
+            maskOp.addSource(snowMask.getRenderedImage());
+            RenderedOp cloudAndSnowMask = JAI.create("Or", maskOp);
+
+            ParameterBlock selectOp = new ParameterBlock();
+            selectOp.addSource(cloudAndSnowMask);
+            selectOp.add(BORDER_VALUE);
+            cloudAndSnowMask = JAI.create("Binarize", selectOp);
+
+            GridCoverageFactory factory = new GridCoverageFactory();
+            ReferencedEnvelope envelope = new ReferencedEnvelope(cloudsMask.getEnvelope());
+
+            this.cloudAndSnowMask = factory.create("CloudAndSnowMask", cloudAndSnowMask, envelope);
         }
-        // JAI operations
-        ParameterBlock maskOp = new ParameterBlock();
-        maskOp.addSource(cloudsMask.getRenderedImage());
-        maskOp.addSource(snowMask.getRenderedImage());
-        RenderedOp cloudAndSnowMask = JAI.create("Or", maskOp);
-
-        GridCoverageFactory factory = new GridCoverageFactory();
-        ReferencedEnvelope envelope = new ReferencedEnvelope(cloudsMask.getEnvelope());
-
-        return factory.create("CloudAndSnowMask", cloudAndSnowMask, envelope);
+        return this.cloudAndSnowMask;
     }
 }
