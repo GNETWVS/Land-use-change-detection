@@ -2,6 +2,7 @@ package LandUseChangeDetection;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import javafx.scene.control.Alert;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.FeatureSource;
@@ -97,5 +98,19 @@ public class Utils {
             }
         }
         return false;
+    }
+
+    /**
+     * Show JavaFX error message
+     * @param title message window title
+     * @param header message header
+     * @param content message content
+     */
+    public static void showErrorMessage(String title, String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }

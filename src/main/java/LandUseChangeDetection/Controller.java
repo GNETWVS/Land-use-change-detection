@@ -48,13 +48,14 @@ public class Controller {
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setTitle("Search and Download Sentinel 2 Data");
             stage.setScene(new Scene(root, 600, 800));
+            stage.setMaximized(true);
             stage.setResizable(false);
             stage.getIcons().add(new Image("/icon.png"));
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        }
+    }
 
     /**
      * Open learn form based on OSM data
@@ -85,7 +86,7 @@ public class Controller {
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setTitle("Learn SVM by NextGIS");
-            stage.setScene(new Scene(root, 450, 450));
+             stage.setScene(new Scene(root, 450, 450));
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();

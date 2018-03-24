@@ -40,5 +40,6 @@ public class ChangeDetector {
                 System.out.println("Changed " + first + " to " + secondClass);
             }
         }
+
     }
 }

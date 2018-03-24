@@ -1,24 +1,51 @@
 package LandUseChangeDetection.forms;
 
+import LandUseChangeDetection.Utils;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafx.util.converter.NumberStringConverter;
+import netscape.javascript.JSObject;
+import org.apache.abdera.Abdera;
+import org.apache.abdera.model.Document;
+import org.apache.abdera.model.Entry;
+import org.apache.abdera.model.Feed;
+import org.apache.abdera.protocol.Response;
+import org.apache.abdera.protocol.client.AbderaClient;
+import org.apache.abdera.protocol.client.ClientResponse;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.odata4j.consumer.ODataConsumer;
 import org.odata4j.consumer.ODataConsumers;
 import org.odata4j.consumer.behaviors.BasicAuthenticationBehavior;
-import org.odata4j.core.OEntity;
 
-import java.util.Date;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.List;
 
 public class SearchAndDownloadForm {
+
+    /**
+     * ESA open hub portal url
+     */
+    private static final String ESA_OPEN_HUB_PORTAL_URL = "https://scihub.copernicus.eu";
+
+    /**
+     * ESA Open Search base
+     */
+    private static final String OPEN_SEARCH_QUERY_BASE = "https://scihub.copernicus.eu/apihub/search?q=";
 
     /**
      * ESA open hub api url
      */
     private static final String esaOpenHubURL = "https://scihub.copernicus.eu/apihub/odata/v1/";
+
     public PasswordField passwordTextField;
     public TextField loginTextField;
 
@@ -27,85 +54,64 @@ public class SearchAndDownloadForm {
      */
     private static ODataConsumer.Builder consumerBuilder = ODataConsumers.newBuilder(esaOpenHubURL);
     public DatePicker sensingStartDate;
+    public DatePicker sensingFinishDate;
+    public TextField maxCloudPercentage;
+    public WebView webMap;
+
+    /**
+     * Open search client
+     */
+    private AbderaClient abderaClient;
 
     /**
      * OData consumer
      */
     private ODataConsumer consumer;
 
+    /**
+     * Geometry JS Leaflet string
+     */
+    private String geometryJS;
+
+    /**
+     * JS connector
+     */
+    public class DownloadAndSearchApplication {
+        public void callFromJavascript(String geom) {
+            geometryJS = geom;
+        }
+    }
+
     @FXML
     void initialize(){
+        maxCloudPercentage.setTextFormatter(new TextFormatter<>(new NumberStringConverter()));
+        WebEngine webEngine = webMap.getEngine();
+        webEngine.load("C:/Code/LandUseChangeDetection/src/resources/SaDWebForm/index.html"); // TODO: change
+        webEngine.getLoadWorker().stateProperty().addListener((ov, oldState, newState) -> {
+            if (newState == Worker.State.SUCCEEDED) {
+                JSObject window = (JSObject) webEngine.executeScript("window");
+                window.setMember("app", new DownloadAndSearchApplication());
+            }
+        });
 //        CredentialsProvider provider = new BasicCredentialsProvider();
-        String login = "artur7";
-        String password = "9063228328a!";
+//        String login = "artur7";
+//        String password = "9063228328a!";
 //        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(login, password);
 //        provider.setCredentials(AuthScope.ANY, credentials);
 //        HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-//        // TODO: Solr with Delete exmaple
-//        HttpSolrClient solrClient = new HttpSolrClient.Builder(esaOpenHubURL)
+//        HttpSolrClient solrClient = new HttpSolrClient.Builder(ESA_OPEN_HUB_PORTAL_URL)
 //                .withHttpClient(httpClient)
 //                .build();
-//        solrClient.setParser(new Parser()); // TODO:Atom Parsing
+//        //solrClient.setParser(new DelegationTokenResponse.JsonMapResponseParser()); // TODO:Atom Parsing
 //        SolrQuery query = new SolrQuery().setParam(CommonParams.QT, "/search");
-//        query.setStart(0);
-//        query.setRows(10);
-//        query.setQuery("platformname:Sentinel-2");
+//        query.setQuery("*");
+//        //query.setParam("format", "json");
 //        try {
 //            QueryResponse response = solrClient.query(query);
-//            System.out.println(response.getResults());
+//            System.out.println(response.getResponse());
 //        } catch (SolrServerException | IOException e) {
 //            e.printStackTrace();
 //        }
-        // TODO: Solr result to oData
-        // TODO: OData
-//        ODataClient client = ODataClientFactory.getClient();
-//        client.getConfiguration().setHttpClientFactory(
-//                new BasicAuthHttpClientFactory(login, password)
-//        );
-//
-//
-//        EdmMetadataRequest request1 = client.getRetrieveRequestFactory().getMetadataRequest();
-//        System.out.println(request1.getURI());
-//        System.out.println(request1.getPrefer());
-//        request1.setAccept("application/xml");
-//
-//        ODataRetrieveResponse<Edm> response1 = request1.execute();
-//        Edm edm = response1.getBody();
-//        List<FullQualifiedName> ctFqns = new ArrayList<FullQualifiedName>();
-//        List<FullQualifiedName> etFqns = new ArrayList<FullQualifiedName>();
-//        System.out.println("\n----- Inspect each property and its type of the first entity: " + etFqns.get(0) + "----");
-//        for (EdmSchema schema : edm.getSchemas()) {
-//            for (EdmComplexType complexType : schema.getComplexTypes()) {
-//                ctFqns.add(complexType.getFullQualifiedName());
-//            }
-//            for (EdmEntityType entityType : schema.getEntityTypes()) {
-//                etFqns.add(entityType.getFullQualifiedName());
-//            }
-//        }
-//        System.out.println("Found ComplexTypes" + ctFqns);
-//        System.out.println("Found EntityTypes" + etFqns);
-//
-//        System.out.println("\n----- Inspect each property and its type of the first entity: " + etFqns.get(0) + "----");
-//        EdmEntityType etype = edm.getEntityType(etFqns.get(0));
-//        for (String propertyName : etype.getPropertyNames()) {
-//            EdmProperty property = etype.getStructuralProperty(propertyName);
-//            FullQualifiedName typeName = property.getType().getFullQualifiedName();
-//            System.out.println("property '" + propertyName + "' " + typeName);
-//        }
-//
-//
-//        URI uri = client.newURIBuilder("https://scihub.copernicus.eu/apihub/odata/v1/Products?$filter=startswith(Name,%27S1%27)&&$format=atom").build();
-//        System.out.println("URI = " + uri);
-//        ODataEntitySetIteratorRequest<ClientEntitySet, ClientEntity> request =
-//                client.getRetrieveRequestFactory().getEntitySetIteratorRequest(uri);
-//        request.setAccept("application/atom+xml");
-//        ODataRetrieveResponse<ClientEntitySetIterator<ClientEntitySet, ClientEntity>> response = request.execute();
-//        ClientEntitySetIterator<ClientEntitySet, ClientEntity> iterator = response.getBody();
-//        while (iterator.hasNext()) {
-//            ClientEntity ce = iterator.next();
-//            System.out.println("Entry:" + ce.getProperties());
-//        }
-//        SearchFactory f = new SearchFactoryImpl().
     }
 
     /**
@@ -120,7 +126,7 @@ public class SearchAndDownloadForm {
      * Login acton handler
      * @param actionEvent login action event
      */
-    public void loginHandler(ActionEvent actionEvent) {
+    public void loginHandler(ActionEvent actionEvent) throws URISyntaxException {
         this.loginTextField.setDisable(true);
         this.passwordTextField.setDisable(true);
         if (!checkLoginAndPassword()) {
@@ -134,21 +140,92 @@ public class SearchAndDownloadForm {
 
             return;
         }
-        // Create consumer
         String login = loginTextField.getText();
         String password = passwordTextField.getText();
+        // Create OpenSearchConsumer
+        Abdera abdera = new Abdera();
+        this.abderaClient = new AbderaClient(abdera);
+        this.abderaClient.addCredentials(
+                ESA_OPEN_HUB_PORTAL_URL,
+                AuthScope.ANY_REALM,
+                AuthScope.ANY_SCHEME,
+                new UsernamePasswordCredentials(login, password)
+        );
+        // Create OData consumer
         consumerBuilder.setClientBehaviors(new BasicAuthenticationBehavior(login, password));
         this.consumer = consumerBuilder.build();
     }
 
 
     public void searchDataHandler(ActionEvent actionEvent) {
-        System.out.println(sensingStartDate.getEditor().getText());
-        for (OEntity entity : consumer.getEntities("Products")
-                .filter("startswith(Name,'S2') and year(IngestionDate) eq 2017")
-                .expand("Nodes")
-                .execute()) {
-            System.out.println(entity.getProperties());
+        Instant sensingStartDate = null;
+        Instant sensingFinishDate = null;
+        if (!this.sensingStartDate.getEditor().getText().isEmpty()) {
+            LocalDate startDate = this.sensingStartDate.getValue();
+            sensingStartDate = Instant.from(startDate.atStartOfDay(ZoneId.systemDefault()));
         }
+        if (!this.sensingFinishDate.getEditor().getText().isEmpty()) {
+            LocalDate finishDate = this.sensingFinishDate.getValue();
+            sensingFinishDate = Instant.from(finishDate.atStartOfDay(ZoneId.systemDefault()));
+        }
+        if (this.maxCloudPercentage.getText().isEmpty()) {
+            Utils.showErrorMessage("Max cloud percentage error",
+                    "Max cloud percentage should be integer number between 0 and 100",
+                    "");
+            return;
+        }
+        int maxCloudsPercentage = Integer.parseInt(maxCloudPercentage.getText());
+        if (maxCloudsPercentage < 0 || maxCloudsPercentage > 100) {
+            Utils.showErrorMessage("Max cloud percentage error",
+                    "Max cloud percentage should be integer number between 0 and 100",
+                    "");
+            return;
+        }
+        // TODO: Сравнить даты и на обе даты
+        // Create query url
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append("platformname:Sentinel-2");
+        // Set up periods
+        if (sensingStartDate != null && sensingFinishDate != null) {
+            queryBuilder.append("&")
+                    .append("endposition:%5B")
+                    .append(sensingStartDate.toString())
+                    .append("%20TO%20")
+                    .append(sensingFinishDate.toString())
+                    .append("%5D");
+        }
+        // Coverage intersection
+        if (this.geometryJS != null) {
+            queryBuilder.append("&footprint:\"Intersects(")
+                    .append(geometryJS)
+                    .append(")\"");
+        }
+        // Set up clouds percentage
+        if (maxCloudsPercentage != 100) {
+            queryBuilder.append("&cloudcoverpercentage:%5B0%20TO%20").append(maxCloudsPercentage).append("%5D");
+        }
+        // Create open search query
+        ClientResponse response = this.abderaClient.get(OPEN_SEARCH_QUERY_BASE + queryBuilder.toString());
+        List<Entry> entries = null;
+        if (response.getType() == Response.ResponseType.SUCCESS) {
+            Document<Feed> doc = response.getDocument();
+            Feed feed = doc.getRoot();
+            entries = feed.getEntries();
+            for (Entry entry : entries) {
+                System.out.println(entry);
+            }
+        } else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Open Search error");
+            alert.setContentText(response.getType().toString());
+        }
+
+//        for (OEntity entity : consumer.getEntities("Products")
+//                .filter("startswith(Name,'S2') and year(IngestionDate) eq 2017")
+//                .expand("Nodes")
+//                .execute()) {
+//            System.out.println(entity.getProperties());
+//        }
     }
 }

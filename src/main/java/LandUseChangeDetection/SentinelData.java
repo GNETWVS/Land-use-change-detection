@@ -106,7 +106,7 @@ public class SentinelData {
 
     /**
      * Get bands' grid dimension
-     * @return
+     * @return grid dimension
      */
     public Dimension getGridDimension() {
         if (this.bands == null || this.bands.size() == 0) {
