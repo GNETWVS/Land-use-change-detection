@@ -2,6 +2,9 @@ package LandUseChangeDetection;
 
 import it.geosolutions.jaiext.JAIExt;
 import org.apache.commons.io.FilenameUtils;
+import org.esa.s2tbx.dataio.VirtualPath;
+import org.esa.s2tbx.dataio.s2.S2Config;
+import org.esa.s2tbx.dataio.s2.S2ProductNamingUtils;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
@@ -17,6 +20,10 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import javax.media.jai.JAI;
 import javax.media.jai.RenderedOp;
+import javax.swing.text.Document;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.renderable.ParameterBlock;
@@ -155,6 +162,19 @@ public class SentinelData {
     }
 
     SentinelData(File dataDir, Resolution r) throws Exception {
+        // Check Sentinel 2 data
+        VirtualPath xmlPath = S2ProductNamingUtils.getXmlFromDir(new VirtualPath(dataDir.getPath()));
+        if (!S2ProductNamingUtils.checkStructureFromProductXml(xmlPath)) {
+            throw new Exception("Error, invalid Sentinel 2 product");
+        }
+        S2Config.Sentinel2ProductLevel level = S2ProductNamingUtils.getLevel(
+                xmlPath, S2Config.Sentinel2InputType.INPUT_TYPE_PRODUCT_METADATA);
+        if (level != S2Config.Sentinel2ProductLevel.L2A) {
+            throw new Exception("Error, Sentinel 2 level should be Level-2A, not " + level.toString() +
+                    " Please, use Level updater");
+        }
+        // TODO: Finish checking
+        // TODO: Interpolation
         this.resolution = r;
         // Get bands' files
         StringBuilder fileBuilder = new StringBuilder(dataDir.getAbsolutePath());

@@ -137,35 +137,6 @@
             <version>1.5.0</version>
         </dependency>
 
-        <!--&lt;!&ndash; https://mvnrepository.com/artifact/commons-codec/commons-codec &ndash;&gt;-->
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>1.11</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.solr</groupId>
-            <artifactId>solr-solrj</artifactId>
-            <version>7.1.0</version>
-            <type>jar</type>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.5</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.solr</groupId>
-            <artifactId>solr-dataimporthandler</artifactId>
-            <version>7.1.0</version>
-            <scope>test</scope>
-        </dependency>
-
-
         <!-- https://mvnrepository.com/artifact/org.apache.abdera/abdera-client -->
         <dependency>
             <groupId>org.apache.abdera</groupId>
@@ -194,17 +165,17 @@
             <version>${jai.version}</version>
         </dependency>
 
-        <!--&lt;!&ndash;<dependency>&ndash;&gt;-->
-            <!--&lt;!&ndash;<groupId>org.esa.s2tbx</groupId>&ndash;&gt;-->
-            <!--&lt;!&ndash;<artifactId>s2tbx</artifactId>&ndash;&gt;-->
-            <!--&lt;!&ndash;<version>${s2tbx.version}</version>&ndash;&gt;-->
-        <!--&lt;!&ndash;</dependency>&ndash;&gt;-->
+        <dependency>
+            <groupId>org.esa.s2tbx</groupId>
+            <artifactId>s2tbx</artifactId>
+            <version>${s2tbx.version}</version>
+        </dependency>
 
-        <!--&lt;!&ndash;<dependency>&ndash;&gt;-->
-            <!--&lt;!&ndash;<groupId>org.esa.s2tbx</groupId>&ndash;&gt;-->
-            <!--&lt;!&ndash;<artifactId>s2tbx-s2msi-reader</artifactId>&ndash;&gt;-->
-            <!--&lt;!&ndash;<version>${s2tbx.version}</version>&ndash;&gt;-->
-        <!--&lt;!&ndash;</dependency>&ndash;&gt;-->
+        <dependency>
+            <groupId>org.esa.s2tbx</groupId>
+            <artifactId>s2tbx-s2msi-reader</artifactId>
+            <version>${s2tbx.version}</version>
+        </dependency>
 
     </dependencies>
 </project>

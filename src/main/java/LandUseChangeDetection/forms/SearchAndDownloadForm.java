@@ -22,8 +22,8 @@ import org.odata4j.consumer.ODataConsumer;
 import org.odata4j.consumer.ODataConsumers;
 import org.odata4j.consumer.behaviors.BasicAuthenticationBehavior;
 
+import java.io.File;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -82,36 +82,21 @@ public class SearchAndDownloadForm {
         }
     }
 
+    /**
+     * Download form initialization
+     */
     @FXML
     void initialize(){
         maxCloudPercentage.setTextFormatter(new TextFormatter<>(new NumberStringConverter()));
         WebEngine webEngine = webMap.getEngine();
-        webEngine.load("C:/Code/LandUseChangeDetection/src/resources/SaDWebForm/index.html"); // TODO: change
+        File mapIndexFile = new File("src/resources/SaDWebForm/index.html");
+        webEngine.load("file:" + mapIndexFile.getAbsolutePath());
         webEngine.getLoadWorker().stateProperty().addListener((ov, oldState, newState) -> {
             if (newState == Worker.State.SUCCEEDED) {
                 JSObject window = (JSObject) webEngine.executeScript("window");
                 window.setMember("app", new DownloadAndSearchApplication());
             }
         });
-//        CredentialsProvider provider = new BasicCredentialsProvider();
-//        String login = "artur7";
-//        String password = "9063228328a!";
-//        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(login, password);
-//        provider.setCredentials(AuthScope.ANY, credentials);
-//        HttpClient httpClient = HttpClientBuilder.create().setDefaultCredentialsProvider(provider).build();
-//        HttpSolrClient solrClient = new HttpSolrClient.Builder(ESA_OPEN_HUB_PORTAL_URL)
-//                .withHttpClient(httpClient)
-//                .build();
-//        //solrClient.setParser(new DelegationTokenResponse.JsonMapResponseParser()); // TODO:Atom Parsing
-//        SolrQuery query = new SolrQuery().setParam(CommonParams.QT, "/search");
-//        query.setQuery("*");
-//        //query.setParam("format", "json");
-//        try {
-//            QueryResponse response = solrClient.query(query);
-//            System.out.println(response.getResponse());
-//        } catch (SolrServerException | IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
     /**
@@ -211,20 +196,16 @@ public class SearchAndDownloadForm {
             Document<Feed> doc = response.getDocument();
             Feed feed = doc.getRoot();
             entries = feed.getEntries();
-            for (Entry entry : entries) {
-                System.out.println(entry);
-            }
         } else {
+            Utils.showErrorMessage("Error", "Open Search error", response.getType().toString());
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
-            alert.setHeaderText("Open Search error");
-            alert.setContentText(response.getType().toString());
         }
 
 //        for (OEntity entity : consumer.getEntities("Products")
 //                .filter("startswith(Name,'S2') and year(IngestionDate) eq 2017")
 //                .expand("Nodes")
 //                .execute()) {
+//            entity
 //            System.out.println(entity.getProperties());
 //        }
     }
