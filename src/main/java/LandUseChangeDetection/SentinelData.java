@@ -1,10 +1,13 @@
 package LandUseChangeDetection;
 
 import it.geosolutions.jaiext.JAIExt;
+import javafx.stage.FileChooser;
 import org.apache.commons.io.FilenameUtils;
+import org.esa.s2tbx.dataio.VirtualDirEx;
 import org.esa.s2tbx.dataio.VirtualPath;
 import org.esa.s2tbx.dataio.s2.S2Config;
 import org.esa.s2tbx.dataio.s2.S2ProductNamingUtils;
+import org.esa.s2tbx.dataio.s2.S2ProductReaderPlugIn;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
@@ -153,7 +156,6 @@ public class SentinelData {
                 band.getPixels(band.getMinX(), band.getMinY(), this.getWidth(), this.getHeight(), pixels[i]);
             }
         }
-        // TODO: Checking for size?
         double[] vector = new double[bands.size()];
         for (int i = 0; i < vector.length; i++) {
             vector[i] = pixels[i][pixel];
@@ -161,9 +163,14 @@ public class SentinelData {
         return vector;
     }
 
-    SentinelData(File dataDir, Resolution r) throws Exception {
+    /**
+     * Check product structure
+     * @param dataFile Path to product XML
+     * @return List of granules
+     */
+    public static List<VirtualPath> checkAndGetGranules(File dataFile) throws Exception {
         // Check Sentinel 2 data
-        VirtualPath xmlPath = S2ProductNamingUtils.getXmlFromDir(new VirtualPath(dataDir.getPath()));
+        VirtualPath xmlPath = new VirtualPath(dataFile.getAbsolutePath());
         if (!S2ProductNamingUtils.checkStructureFromProductXml(xmlPath)) {
             throw new Exception("Error, invalid Sentinel 2 product");
         }
@@ -173,42 +180,60 @@ public class SentinelData {
             throw new Exception("Error, Sentinel 2 level should be Level-2A, not " + level.toString() +
                     " Please, use Level updater");
         }
-        // TODO: Finish checking
-        // TODO: Interpolation
+        if (!S2ProductNamingUtils.hasValidStructure(
+                S2Config.Sentinel2InputType.INPUT_TYPE_PRODUCT_METADATA, xmlPath)) {
+            throw new Exception("Error, Sentinel 2 Product doesn't have valid structure");
+        }
+        return S2ProductNamingUtils.getTilesFromProductXml(xmlPath);
+    }
+
+    SentinelData(File granuleDir, Resolution r) throws Exception {
         this.resolution = r;
         // Get bands' files
-        StringBuilder fileBuilder = new StringBuilder(dataDir.getAbsolutePath());
-        fileBuilder.append(File.separator);
-        fileBuilder.append("GRANULE");
-        fileBuilder.append(File.separator);
-        File file = new File(fileBuilder.toString());
-        File[] files = file.listFiles();
-        if (files == null || files.length == 0) {
-            throw new NullPointerException("Error, incorrect SL2 Data");
-        }
-        file = files[0];
-        fileBuilder = new StringBuilder(file.getAbsolutePath());
+        StringBuilder fileBuilder = new StringBuilder(granuleDir.getAbsolutePath());
         fileBuilder.append(File.separator);
         fileBuilder.append("IMG_DATA");
         fileBuilder.append(File.separator);
         fileBuilder.append(r);
         fileBuilder.append(File.separator);
-        file = new File(fileBuilder.toString());
-        files = file.listFiles();
+        File file = new File(fileBuilder.toString());
+        File[] files = file.listFiles();
         if (files == null) {
             throw new NullPointerException("Error, incorrect SL2 Data");
         }
         // TODO: Filter bands
-        // TODO: XML Reader
+        // TODO: Interpolation 10m
         bands = new ArrayList<>(files.length);
         for (File bandFile : files) {
             if (FilenameUtils.getExtension(bandFile.getName()).equals(JP2K_EXTENSION)) {
                 bands.add(openSentinelData(bandFile));
             }
         }
-        // TODO: Select mask for snow and clouds
-        this.cloudsMaskFile = new File("C:\\Users\\Arthur\\Desktop\\CW\\Data\\S2A_MSIL2A_20170924T083701_N0205_R064_T37UDB_20170924T083955.SAFE\\GRANULE\\L2A_T37UDB_A011787_20170924T083955\\QI_DATA\\L2A_T37UDB_20170924T083701_CLD_60m.jp2");
-        this.snowMaskFile = new File("C:\\Users\\Arthur\\Desktop\\CW\\Data\\S2A_MSIL2A_20170924T083701_N0205_R064_T37UDB_20170924T083955.SAFE\\GRANULE\\L2A_T37UDB_A011787_20170924T083955\\QI_DATA\\L2A_T37UDB_20170924T083701_SNW_60m.jp2");
+        fileBuilder = new StringBuilder(granuleDir.getAbsolutePath());
+        fileBuilder.append(File.separator);
+        fileBuilder.append("QI_DATA");
+        fileBuilder.append(File.separator);
+        file = new File(fileBuilder.toString());
+        files = file.listFiles();
+        if (files == null) {
+            throw new NullPointerException("Error, incorrect SL2 Data");
+        }
+        // TODO: 10m
+        String resolutionMarker = r.toString().substring(1);
+        for (File qFile : files) {
+            if (FilenameUtils.getExtension(qFile.getName()).equals(JP2K_EXTENSION)){
+                if (qFile.getPath().endsWith("CLD_" + resolutionMarker + ".jp2")) {
+                    this.cloudsMaskFile = qFile;
+                    continue;
+                }
+                if (qFile.getPath().endsWith("SNW_" + resolutionMarker + ".jp2")) {
+                    this.snowMaskFile = qFile;
+                }
+            }
+        }
+        if (this.cloudsMaskFile == null || this.snowMaskFile == null ) {
+            throw new Exception("Error, granule not contain quality data");
+        }
     }
 
     /**
@@ -324,7 +349,7 @@ public class SentinelData {
      * Crop bands
      * @param envelope cropping envelope
      */
-    public void cropBands(Envelope envelope) {
+    public void cropBands(Envelope envelope) throws Exception {
         final CoverageProcessor processor = new CoverageProcessor();
         ParameterValueGroup params = processor.getOperation("CoverageCrop").getParameters();
         params.parameter("Envelope").setValue(envelope);
@@ -335,6 +360,11 @@ public class SentinelData {
             band = (GridCoverage2D) processor.doOperation(params);
             it.set(band);
         }
+        if (this.cloudAndSnowMask == null) {
+            this.getCloudsAndSnowMask();
+        }
+        params.parameter("Source").setValue(this.cloudAndSnowMask);
+        this.cloudAndSnowMask = (GridCoverage2D) processor.doOperation(params);
     }
 
     /**

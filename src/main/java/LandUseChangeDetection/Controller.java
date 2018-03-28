@@ -112,9 +112,10 @@ public class Controller {
             return;
         }
         try {
+            SentinelData firstSentinelData = new SentinelData(beforeSentinelData, Resolution.R60m);
+            SentinelData secondSentinelData = new SentinelData(afterSentinelData, Resolution.R60m);
             ChangeDetector detector = new ChangeDetector(
-                    new SentinelData(beforeSentinelData, Resolution.R60m),
-                    new SentinelData(afterSentinelData, Resolution.R60m)
+                    firstSentinelData, secondSentinelData
             );
             detector.getChanges();
 

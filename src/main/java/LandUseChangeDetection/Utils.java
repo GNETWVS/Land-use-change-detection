@@ -3,6 +3,8 @@ package LandUseChangeDetection;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import javafx.scene.control.Alert;
+import org.geotools.coverage.grid.GridCoverage2D;
+import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -14,6 +16,8 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.geometry.Envelope;
+import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -108,5 +112,19 @@ public class Utils {
         alert.setHeaderText(header);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    /**
+     * Crop grid coverage by envelope
+     * @param scene grid coverage
+     * @param envelope envelope
+     * @return cropped grid coverage
+     */
+    public static GridCoverage2D cropGridCoverage(GridCoverage2D scene, Envelope envelope) {
+        final CoverageProcessor processor = new CoverageProcessor();
+        ParameterValueGroup params = processor.getOperation("CoverageCrop").getParameters();
+        params.parameter("Envelope").setValue(envelope);
+        params.parameter("Source").setValue(scene);
+        return (GridCoverage2D)processor.doOperation(params);
     }
 }

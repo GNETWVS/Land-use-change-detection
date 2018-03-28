@@ -131,6 +131,13 @@
             <version>${geotools.version}</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.geotools/gt-wps -->
+        <dependency>
+            <groupId>org.geotools</groupId>
+            <artifactId>gt-process-raster</artifactId>
+            <version>${geotools.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.github.haifengl</groupId>
             <artifactId>smile-core</artifactId>
