@@ -416,4 +416,32 @@ public class SentinelData {
         }
         return this.cloudAndSnowMask;
     }
+
+//    /**
+//     * Merge masks
+//     * @param first first mask
+//     * @param second second mask
+//     * @return merged mask
+//     * @throws Exception if mask is null or not equals
+//     */
+//    public static GridCoverage2D mergeMasks(GridCoverage2D first, GridCoverage2D second) throws Exception {
+//        if (first == null || second == null) {
+//            throw new Exception("Error, mask cannot be null");
+//        }
+//        Envelope a = first.getEnvelope2D();
+//        Envelope b = second.getEnvelope2D();
+//        if (first.getEnvelope() != second.getEnvelope()) {
+//            //throw new Exception("Error, masks must have equal envelopes");
+//        }
+//        // JAI operations
+//        ParameterBlock maskOp = new ParameterBlock();
+//        maskOp.addSource(first.getRenderedImage());
+//        maskOp.addSource(second.getRenderedImage());
+//        RenderedOp mask = JAI.create("Or", maskOp);
+//
+//        GridCoverageFactory factory = new GridCoverageFactory();
+//        ReferencedEnvelope envelope = new ReferencedEnvelope(first.getEnvelope());
+//
+//        return factory.create("Mask", mask, envelope);
+//    }
 }

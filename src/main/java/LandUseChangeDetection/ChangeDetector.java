@@ -9,18 +9,11 @@ import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.data.simple.SimpleFeatureStore;
-import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.process.raster.PolygonExtractionProcess;
-import org.geotools.referencing.factory.ReferencingFactory;
-import org.opengis.geometry.Envelope;
 
-import javax.media.jai.JAI;
-import javax.media.jai.RenderedOp;
 import java.awt.image.Raster;
-import java.awt.image.renderable.ParameterBlock;
 import java.io.File;
 import java.io.Serializable;
-import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,28 +46,35 @@ public class ChangeDetector {
                 || beforeSentinelData.getWidth() != afterSentinelData.getWidth()) {
             return;
         }
-        //Get clouds and snow masks
-        GridCoverage2D maskGrid = getCloudsAndSnowMask();
-        //Raster mask = maskGrid.getRenderedImage().getData();
-        //if (mask.getWidth() != beforeSentinelData.getWidth() || mask.getHeight() != beforeSentinelData.getHeight()) {
-        //    throw new Exception("Error, mask and bands sizes should be equal");
-        //}
-        //int[] maskPixels = new int[mask.getWidth() * mask.getHeight()];
-        //mask.getPixels(mask.getMinX(), mask.getMinY(), mask.getWidth(), mask.getHeight(), maskPixels);
-
+//         clouds and snow masks
+//        GridCoverage2D maskGrid = SentinelData.mergeMasks(
+//                beforeSentinelData.getCloudsAndSnowMask(),
+//                afterSentinelData.getCloudsAndSnowMask());
+//        Raster mask = maskGrid.getRenderedImage().getData();
+//        if (mask.getWidth() != beforeSentinelData.getWidth() || mask.getHeight() != beforeSentinelData.getHeight()) {
+//            throw new Exception("Error, mask and bands sizes should be equal");
+//        }
+//        int[] maskPixels = new int[mask.getWidth() * mask.getHeight()];
+//        mask.getPixels(mask.getMinX(), mask.getMinY(), mask.getWidth(), mask.getHeight(), maskPixels);
         Classification svm = Classification.getInstance();
+        Raster beforeMask = beforeSentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
+        Raster afterMask = afterSentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
+        int[] beforeMaskPixels = new int[beforeMask.getWidth() * beforeMask.getHeight()];
+        beforeMask.getPixels(beforeMask.getMinX(), beforeMask.getMinY(), beforeMask.getWidth(), beforeMask.getHeight(), beforeMaskPixels);
+        int[] afterMaskPixels = new int[afterMask.getWidth() * afterMask.getHeight()];
+        afterMask.getPixels(afterMask.getMinX(), afterMask.getMinY(), afterMask.getWidth(), afterMask.getHeight(), afterMaskPixels);
         float[][] beforeClassification = new float[beforeSentinelData.getWidth()][beforeSentinelData.getHeight()];
         float[][] afterClassification = new float[afterSentinelData.getWidth()][afterSentinelData.getHeight()];
         for (int x = 0; x < beforeSentinelData.getWidth(); ++x) {
             for (int y = 0; y < beforeSentinelData.getHeight(); ++y) {
                 int i = x * beforeSentinelData.getHeight() + y;
-                //if (maskPixels[i] != 1) {
+                if (beforeMaskPixels[i] != 1 && afterMaskPixels[i] != 1) {
                     beforeClassification[x][y] = svm.predict(beforeSentinelData.getPixelVector(i));
                     afterClassification[x][y] = svm.predict(afterSentinelData.getPixelVector(i));
-                //} else {
-                    //beforeClassification[x][y] = -1;
-                    //afterClassification[x][y] = -1;
-                //}
+                } else {
+                    beforeClassification[x][y] = -1;
+                    afterClassification[x][y] = -1;
+                }
             }
         }
         // Check pixels
@@ -169,20 +169,20 @@ public class ChangeDetector {
      * @return cropped and merged Sentinel 2 data mask
      * @throws Exception if cannot read masks files
      */
-    private GridCoverage2D getCloudsAndSnowMask() throws Exception {
-        // Check sizes
-        GridCoverage2D beforeMask = beforeSentinelData.getCloudsAndSnowMask();
-        GridCoverage2D afterMask = afterSentinelData.getCloudsAndSnowMask();
-        // JAI merging
-        ParameterBlock mergeOp = new ParameterBlock();
-        mergeOp.addSource(beforeMask.getRenderedImage());
-        mergeOp.addSource(afterMask.getRenderedImage());
-        //JAIExt.initJAIEXT();
-        RenderedOp mask = JAI.create("Or", mergeOp);
-
-        GridCoverageFactory factory = new GridCoverageFactory();
-        ReferencedEnvelope envelope = new ReferencedEnvelope(beforeMask.getEnvelope());
-        ReferencedEnvelope envelope1 = new ReferencedEnvelope(afterMask.getEnvelope());
-        return factory.create("Clouds and snow mask", mask, envelope);
-    }
+//    private GridCoverage2D getCloudsAndSnowMask() throws Exception {
+//        // Check sizes
+//        GridCoverage2D beforeMask = beforeSentinelData.getCloudsAndSnowMask();
+//        GridCoverage2D afterMask = afterSentinelData.getCloudsAndSnowMask();
+//        // JAI merging
+//        ParameterBlock mergeOp = new ParameterBlock();
+//        mergeOp.addSource(beforeMask.getRenderedImage());
+//        mergeOp.addSource(afterMask.getRenderedImage());
+//        //JAIExt.initJAIEXT();
+//        RenderedOp mask = JAI.create("Or", mergeOp);
+//
+//        GridCoverageFactory factory = new GridCoverageFactory();
+//        ReferencedEnvelope envelope = new ReferencedEnvelope(beforeMask.getEnvelope());
+//        ReferencedEnvelope envelope1 = new ReferencedEnvelope(afterMask.getEnvelope());
+//        return factory.create("Clouds and snow mask", mask, envelope);
+//    }
 }
