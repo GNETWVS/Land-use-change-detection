@@ -1,13 +1,10 @@
 package LandUseChangeDetection;
 
 import it.geosolutions.jaiext.JAIExt;
-import javafx.stage.FileChooser;
 import org.apache.commons.io.FilenameUtils;
-import org.esa.s2tbx.dataio.VirtualDirEx;
 import org.esa.s2tbx.dataio.VirtualPath;
 import org.esa.s2tbx.dataio.s2.S2Config;
 import org.esa.s2tbx.dataio.s2.S2ProductNamingUtils;
-import org.esa.s2tbx.dataio.s2.S2ProductReaderPlugIn;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
@@ -23,10 +20,6 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import javax.media.jai.JAI;
 import javax.media.jai.RenderedOp;
-import javax.swing.text.Document;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.awt.*;
 import java.awt.image.Raster;
 import java.awt.image.renderable.ParameterBlock;
@@ -34,9 +27,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Sentinel data resolutions
@@ -187,8 +184,48 @@ public class SentinelData {
         return S2ProductNamingUtils.getTilesFromProductXml(xmlPath);
     }
 
+    /**
+     * Sentinel 2 Data sensing datetime
+     */
+    private Date sensingDate;
+
+    /**
+     * Sensing date getter
+     * @return Sentinel 2 sensing datetime
+     */
+    public Date getSensingDate() {
+        return this.sensingDate;
+    }
+
+    /**
+     * Date extracting pattern
+     */
+    private static final Pattern DATE_PATTERN = Pattern.compile("(.*)_(\\d{8}T\\d{6})(.*)");
+
+    /**
+     * Date layout
+     */
+    private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+
+    /**
+     * Extracting Sentinel 2 data sensing date and time
+     * @param granuleDir Sentinel 2 data granule
+     * @return sensing datetime
+     * @throws Exception if granule is not exist or contains incorrect sensing date
+     */
+    private static Date getSensingDate(File granuleDir) throws Exception {
+        Matcher m = DATE_PATTERN.matcher(granuleDir.getName());
+        if (!m.find()) {
+            throw new Exception("Error, granule directory doesn't contains sensing date info");
+        }
+        String sensingDateString = m.group(2);
+        return FORMATTER.parse(sensingDateString);
+    }
+
     SentinelData(File granuleDir, Resolution r) throws Exception {
         this.resolution = r;
+        // Get date
+        this.sensingDate = getSensingDate(granuleDir);
         // Get bands' files
         StringBuilder fileBuilder = new StringBuilder(granuleDir.getAbsolutePath());
         fileBuilder.append(File.separator);

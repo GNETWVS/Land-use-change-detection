@@ -1,25 +1,17 @@
 package LandUseChangeDetection;
 
+import LandUseChangeDetection.data.Data;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
-import org.geotools.data.DefaultTransaction;
-import org.geotools.data.Transaction;
-import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.data.simple.SimpleFeatureSource;
-import org.geotools.data.simple.SimpleFeatureStore;
+import org.geotools.feature.FeatureCollection;
 import org.geotools.process.raster.PolygonExtractionProcess;
 
 import java.awt.image.Raster;
-import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class ChangeDetector {
+class ChangeDetector {
 
     private SentinelData beforeSentinelData;
 
@@ -41,10 +33,10 @@ public class ChangeDetector {
         afterSentinelData.cropBands(beforeSentinelData.getEnvelope());
     }
 
-    public void getChanges() throws Exception {
+    FeatureCollection getChanges() throws Exception {
         if (beforeSentinelData.getHeight() != afterSentinelData.getHeight()
                 || beforeSentinelData.getWidth() != afterSentinelData.getWidth()) {
-            return;
+            return null;
         }
 //         clouds and snow masks
 //        GridCoverage2D maskGrid = SentinelData.mergeMasks(
@@ -90,34 +82,8 @@ public class ChangeDetector {
                 null, null, null, null);
         SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
                 null, null, null, null);
-
-
-        File file = new File("C:\\Users\\Arthur\\Desktop\\1\\1.shp");
-        ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-        Map<String, Serializable> params = new HashMap<>();
-        params.put("url", file.toURI().toURL());
-        params.put("create spatial index", Boolean.TRUE);
-
-        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createDataStore(params);
-        dataStore.createSchema(beforeCollection.getSchema());
-
-        Transaction transaction = new DefaultTransaction("create");
-        String typeName = dataStore.getTypeNames()[0];
-        SimpleFeatureSource featureSource = dataStore.getFeatureSource(typeName);
-
-        if (featureSource instanceof SimpleFeatureStore) {
-            SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
-            featureStore.setTransaction(transaction);
-            try {
-                featureStore.addFeatures(beforeCollection);
-                transaction.commit();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                transaction.rollback();
-            } finally {
-                transaction.close();
-            }
-        }
+        // Get land use changes
+        return Data.getLandUseChanges(beforeCollection, afterCollection);
     }
 
     /**
@@ -164,11 +130,11 @@ public class ChangeDetector {
 
 
 
-    /**
-     * Get cropped and merged clouds and snow mask
-     * @return cropped and merged Sentinel 2 data mask
-     * @throws Exception if cannot read masks files
-     */
+//    /**
+//     * Get cropped and merged clouds and snow mask
+//     * @return cropped and merged Sentinel 2 data mask
+//     * @throws Exception if cannot read masks files
+//     */
 //    private GridCoverage2D getCloudsAndSnowMask() throws Exception {
 //        // Check sizes
 //        GridCoverage2D beforeMask = beforeSentinelData.getCloudsAndSnowMask();
