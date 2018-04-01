@@ -83,7 +83,8 @@ class ChangeDetector {
         SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
                 null, null, null, null);
         // Get land use changes
-        return Data.getLandUseChanges(beforeCollection, afterCollection);
+        return Data.getLandUseChanges(beforeCollection, beforeSentinelData.getSensingDate(),
+                afterCollection, afterSentinelData.getSensingDate());
     }
 
     /**
