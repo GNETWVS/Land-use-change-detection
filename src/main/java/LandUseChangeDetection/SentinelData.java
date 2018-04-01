@@ -259,11 +259,11 @@ public class SentinelData {
         String resolutionMarker = r.toString().substring(1);
         for (File qFile : files) {
             if (FilenameUtils.getExtension(qFile.getName()).equals(JP2K_EXTENSION)){
-                if (qFile.getPath().endsWith("CLD_" + resolutionMarker + ".jp2")) {
+                if (qFile.getPath().endsWith(resolutionMarker + ".jp2") && qFile.getPath().contains("CLD")) {
                     this.cloudsMaskFile = qFile;
                     continue;
                 }
-                if (qFile.getPath().endsWith("SNW_" + resolutionMarker + ".jp2")) {
+                if (qFile.getPath().endsWith(resolutionMarker + ".jp2") && qFile.getPath().contains("SNW")) {
                     this.snowMaskFile = qFile;
                 }
             }

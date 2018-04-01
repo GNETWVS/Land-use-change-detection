@@ -15,7 +15,7 @@
 -- -- Enable US Tiger Geocoder
 -- CREATE EXTENSION postgis_tiger_geocoder;
 
--- DROP TABLE landUses;
+DROP TABLE landUses;
 
 CREATE TABLE landUses(
   id            SERIAL PRIMARY KEY,

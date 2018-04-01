@@ -1,17 +1,27 @@
 package LandUseChangeDetection.data;
 
+import LandUseChangeDetection.Utils;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKTReader;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.postgis.PGgeometry;
+import org.postgis.Polygon;
 import org.postgresql.PGConnection;
 import org.postgresql.util.PGobject;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Date;
 
 public class Data {
@@ -35,12 +45,16 @@ public class Data {
     }
 
 
-    public static FeatureCollection getLandUseChanges(SimpleFeatureCollection before, Date beforeDate,
-                                                      SimpleFeatureCollection after, Date afterDate) throws SQLException {
+    public static SimpleFeatureCollection getLandUseChanges(SimpleFeatureCollection before, Date beforeDate,
+                                                      SimpleFeatureCollection after, Date afterDate) throws SQLException, FactoryException, ParseException {
         // Insert both collection to PostGIS
         insertCollection(before, beforeDate);
         insertCollection(after, afterDate);
-        return  null;
+        if (before.getSchema().getCoordinateReferenceSystem() != after.getSchema().getCoordinateReferenceSystem()) {
+            Utils.transformToCRS(after, before.getSchema().getCoordinateReferenceSystem());
+        }
+        // Get changes
+        return getLandUseChanges(beforeDate, afterDate, before.getSchema().getCoordinateReferenceSystem());
     }
 
     /**
@@ -48,7 +62,14 @@ public class Data {
      */
     private static final String INSERT_STATEMENT = "INSERT INTO landUses(sensingDate, geom, landUseClass) VALUES (?, st_geomfromtext(?), ?)";
 
+    /**
+     * Insert clssificated collection into PostGIS
+     * @param collection classificated collection
+     * @param date sensing date
+     * @throws SQLException if cannot insert into PostGIS
+     */
     private static void insertCollection(SimpleFeatureCollection collection, Date date) throws SQLException {
+        connection.setAutoCommit(false);
         SimpleFeatureIterator it = collection.features();
         while (it.hasNext()) {
             SimpleFeature feature = it.next();
@@ -60,5 +81,56 @@ public class Data {
             statement.setInt(3, landUseClass);
             statement.execute();
         }
+        connection.commit();
+        connection.setAutoCommit(true);
+    }
+
+    /**
+     * Get changes query
+     */
+    private static final String CHANGE_DETECTION_QUERY =
+            "SELECT st_intersection(before.geom, after.geom), " +
+                    "before.landuseclass AS beforeCLass, after.landuseclass AS afterClass " +
+                    "FROM (SELECT * FROM landuses WHERE sensingdate = ?) AS before " +
+                    "INNER JOIN (SELECT * FROM landuses WHERE sensingdate = ?) AS after " +
+                    "ON before.sensingdate != after.sensingdate AND st_intersects(before.geom, after.geom)";
+
+    /**
+     * Get land use changes
+     * @param firstDate before sensing date
+     * @param afterDate after sensing date
+     * @param crs coordinate reference system
+     * @return classification detection
+     * @throws SQLException if cannot read from PostGIS
+     */
+    private static SimpleFeatureCollection getLandUseChanges(Date firstDate, Date afterDate, CoordinateReferenceSystem crs) throws SQLException, ParseException {
+        PreparedStatement statement = connection.prepareStatement(CHANGE_DETECTION_QUERY);
+        statement.setDate(1, new java.sql.Date(firstDate.getTime()));
+        statement.setDate(2,  new java.sql.Date(afterDate.getTime()));
+        ResultSet resultSet = statement.executeQuery();
+        SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
+        typeBuilder.setName("LUCD");
+        typeBuilder.setCRS(crs);
+        typeBuilder.add("geom", MultiPolygon.class);
+        typeBuilder.add("class", Integer.class);
+        final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
+        DefaultFeatureCollection featureCollection = new DefaultFeatureCollection(null, null);
+        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
+        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
+        WKTReader reader = new WKTReader(geometryFactory);
+        while (resultSet.next()) {
+            PGgeometry geom = (PGgeometry)resultSet.getObject(1);
+            int beforeClass = resultSet.getInt(2);
+            int afterCLass = resultSet.getInt(3);
+            featureBuilder.add(reader.read(geom.toString()));
+            if (beforeClass == afterCLass) {
+                featureBuilder.add(beforeClass + 1);
+            } else {
+                featureBuilder.add((beforeClass + 1) * 10 + afterCLass);
+            }
+            SimpleFeature feature = featureBuilder.buildFeature(null);
+            featureCollection.add(feature);
+        }
+        return featureCollection;
     }
 }
