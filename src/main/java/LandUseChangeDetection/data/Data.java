@@ -46,7 +46,7 @@ public class Data {
 
 
     public static SimpleFeatureCollection getLandUseChanges(SimpleFeatureCollection before, Date beforeDate,
-                                                      SimpleFeatureCollection after, Date afterDate) throws SQLException, FactoryException, ParseException {
+                                                      SimpleFeatureCollection after, Date afterDate) throws Exception {
         // Insert both collection to PostGIS
         insertCollection(before, beforeDate);
         insertCollection(after, afterDate);
@@ -77,7 +77,7 @@ public class Data {
             int landUseClass = ((Double)feature.getAttribute("value")).intValue();
             PreparedStatement statement = connection.prepareStatement(INSERT_STATEMENT);
             statement.setDate(1, new java.sql.Date(date.getTime()));
-            statement.setString(2, geometry.toText());
+            statement.setObject(2, geometry.toText()); // TODO: Check
             statement.setInt(3, landUseClass);
             statement.execute();
         }
@@ -85,15 +85,30 @@ public class Data {
         connection.setAutoCommit(true);
     }
 
-    /**
-     * Get changes query
-     */
-    private static final String CHANGE_DETECTION_QUERY =
-            "SELECT st_intersection(before.geom, after.geom), " +
-                    "before.landuseclass AS beforeCLass, after.landuseclass AS afterClass " +
-                    "FROM (SELECT * FROM landuses WHERE sensingdate = ?) AS before " +
-                    "INNER JOIN (SELECT * FROM landuses WHERE sensingdate = ?) AS after " +
-                    "ON before.sensingdate != after.sensingdate AND st_intersects(before.geom, after.geom)";
+//    /**
+//     * Get changes query
+//     */
+//    private static final String CHANGE_DETECTION_QUERY =
+//            "SELECT st_intersection(before.geom, after.geom), " +
+//                    "before.landuseclass AS beforeCLass, after.landuseclass AS afterClass " +
+//                    "FROM (SELECT * FROM landuses WHERE sensingdate = ?) AS before " +
+//                    "INNER JOIN (SELECT * FROM landuses WHERE sensingdate = ?) AS after " +
+//                    "ON before.sensingdate != after.sensingdate AND st_intersects(before.geom, after.geom)";
+
+
+    private static final String CHANGE_DETECTION_QUERY;
+    static {
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append("SELECT row_to_json(fc) ");
+        queryBuilder.append("FROM (SELECT 'FeatureCollection' AS type, array_to_json(array_agg(f)) AS features ");
+        queryBuilder.append("FROM (SELECT 'Feature' AS type, ");
+        queryBuilder.append("st_asGeoJSON(st_intersection(before.geom, after.geom))::json AS geometry, ");
+        queryBuilder.append("row_to_json((before.landuseclass, after.landuseclass)) AS properties ");
+        queryBuilder.append("FROM (SELECT * FROM landuses WHERE sensingdate = ?) AS before ");
+        queryBuilder.append("INNER JOIN (SELECT * FROM landuses WHERE sensingdate = ?) AS after ");
+        queryBuilder.append("ON before.sensingdate != after.sensingdate AND st_intersects(before.geom, after.geom) AND before.landuseclass = after.landuseclass) AS f) AS fc");
+        CHANGE_DETECTION_QUERY = queryBuilder.toString();
+    }
 
     /**
      * Get land use changes
@@ -103,34 +118,41 @@ public class Data {
      * @return classification detection
      * @throws SQLException if cannot read from PostGIS
      */
-    private static SimpleFeatureCollection getLandUseChanges(Date firstDate, Date afterDate, CoordinateReferenceSystem crs) throws SQLException, ParseException {
+    private static SimpleFeatureCollection getLandUseChanges(Date firstDate, Date afterDate, CoordinateReferenceSystem crs) throws Exception {
         PreparedStatement statement = connection.prepareStatement(CHANGE_DETECTION_QUERY);
         statement.setDate(1, new java.sql.Date(firstDate.getTime()));
         statement.setDate(2,  new java.sql.Date(afterDate.getTime()));
         ResultSet resultSet = statement.executeQuery();
-        SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
-        typeBuilder.setName("LUCD");
-        typeBuilder.setCRS(crs);
-        typeBuilder.add("geom", MultiPolygon.class);
-        typeBuilder.add("class", Integer.class);
-        final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
-        DefaultFeatureCollection featureCollection = new DefaultFeatureCollection(null, null);
-        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
-        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
-        WKTReader reader = new WKTReader(geometryFactory);
-        while (resultSet.next()) {
-            PGgeometry geom = (PGgeometry)resultSet.getObject(1);
-            int beforeClass = resultSet.getInt(2);
-            int afterCLass = resultSet.getInt(3);
-            featureBuilder.add(reader.read(geom.toString()));
-            if (beforeClass == afterCLass) {
-                featureBuilder.add(beforeClass + 1);
-            } else {
-                featureBuilder.add((beforeClass + 1) * 10 + afterCLass);
-            }
-            SimpleFeature feature = featureBuilder.buildFeature(null);
-            featureCollection.add(feature);
+        if (!resultSet.next()) {
+            throw new Exception("Error, change detection is null");
         }
-        return featureCollection;
+        String lucdGeoJson = resultSet.getString(1);
+        System.out.println(lucdGeoJson);
+//        SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
+//        typeBuilder.setName("LUCD");
+//        typeBuilder.setCRS(crs);
+//        typeBuilder.add("geom", MultiPolygon.class);
+//        typeBuilder.add("before", Integer.class);
+//        typeBuilder.add("after", Integer.class);
+//        final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
+//        DefaultFeatureCollection featureCollection = new DefaultFeatureCollection(null, null);
+//        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
+//        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory(null);
+//        WKTReader reader = new WKTReader(geometryFactory);
+//        while (resultSet.next()) {
+//            PGgeometry geom = (PGgeometry)resultSet.getObject(1);
+//            int beforeClass = resultSet.getInt(2);
+//            int afterCLass = resultSet.getInt(3);
+//            featureBuilder.add(reader.read(geom.getValue()));
+//            if (beforeClass == afterCLass) {
+//                featureBuilder.add(beforeClass + 1);
+//            } else {
+//                featureBuilder.add((beforeClass + 1) * 10 + afterCLass);
+//            }
+//            SimpleFeature feature = featureBuilder.buildFeature(null);
+//            featureCollection.add(feature);
+//        }
+//        return featureCollection;
+        return null;
     }
 }
