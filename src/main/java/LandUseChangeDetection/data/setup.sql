@@ -18,8 +18,9 @@
 DROP TABLE landUses;
 
 CREATE TABLE landUses(
-  id            SERIAL PRIMARY KEY,
-  sensingDate   TIMESTAMP NOT NULL,
+  id SERIAL PRIMARY KEY,
   geom          GEOMETRY NOT NULL,
-  landUseClass  INT NOT NULL
+  landUseClass  INT NOT NULL,
+  sensingDate   TIMESTAMP NOT NULL
+  -- TODO: Primary key
 );
