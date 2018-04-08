@@ -1,8 +1,9 @@
 package LandUseChangeDetection;
 
-import LandUseChangeDetection.data.Data;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.geom.Polygon;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.data.DefaultTransaction;
@@ -19,16 +20,19 @@ import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.process.raster.PolygonExtractionProcess;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 
+import java.awt.*;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.List;
 import java.util.stream.IntStream;
 
 class ChangeDetector {
@@ -64,16 +68,6 @@ class ChangeDetector {
                 || beforeSentinelData.getWidth() != afterSentinelData.getWidth()) {
             return null;
         }
-//         clouds and snow masks
-//        GridCoverage2D maskGrid = SentinelData.mergeMasks(
-//                beforeSentinelData.getCloudsAndSnowMask(),
-//                afterSentinelData.getCloudsAndSnowMask());
-//        Raster mask = maskGrid.getRenderedImage().getData();
-//        if (mask.getWidth() != beforeSentinelData.getWidth() || mask.getHeight() != beforeSentinelData.getHeight()) {
-//            throw new Exception("Error, mask and bands sizes should be equal");
-//        }
-//        int[] maskPixels = new int[mask.getWidth() * mask.getHeight()];
-//        mask.getPixels(mask.getMinX(), mask.getMinY(), mask.getWidth(), mask.getHeight(), maskPixels);
         Classification svm = Classification.getInstance();
         Raster beforeMask = beforeSentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
         Raster afterMask = afterSentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
@@ -112,17 +106,24 @@ class ChangeDetector {
         System.out.println("Polygon Extraction Before");
         SimpleFeatureCollection beforeCollection = process.execute(beforeClassesGrid,  0, true,
                 null, Collections.singletonList(-1), null, null);
+        //beforeCollection = Utils.transformToCRSWithAttributes(beforeCollection, DefaultGeographicCRS.WGS84);
         System.out.println("Polygon Extraction After");
+        System.out.println(beforeCollection.getSchema().getCoordinateReferenceSystem());
         SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
                 null, Collections.singletonList(-1), null, null);
+        //afterCollection = Utils.transformToCRSWithAttributes(afterCollection, DefaultGeographicCRS.WGS84);
         System.out.println("Finish polygon extraction");
         // Get land use changes
+        SimpleFeatureCollection collection = getIntersections(beforeCollection, afterCollection);
+        writeShapefile(beforeCollection, "1.shp");
+        writeShapefile(afterCollection, "2.shp");
+        writeShapefile(collection, "3.shp");
+        return collection;
+    }
 
-
-        SimpleFeatureCollection collection = Data.getLandUseChanges(beforeCollection, beforeSentinelData.getSensingDate(),
-                afterCollection, afterSentinelData.getSensingDate());
-                File file = new File("C:\\Users\\Arthur\\Desktop\\1\\1.shp");
+    private void writeShapefile(SimpleFeatureCollection collection, String name) throws IOException {
         ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
+        File file = new File("C:\\Users\\Arthur\\Desktop\\1\\" + name);
         Map<String, Serializable> params = new HashMap<>();
         params.put("url", file.toURI().toURL());
         params.put("create spatial index", Boolean.TRUE);
@@ -137,14 +138,13 @@ class ChangeDetector {
             try {
                 featureStore.addFeatures(collection);
                 transaction.commit();
-                } catch (Exception ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 transaction.rollback();
-                } finally {
+            } finally {
                 transaction.close();
-                }
-                   }
-        return collection;
+            }
+        }
     }
 
     /**
@@ -187,41 +187,6 @@ class ChangeDetector {
                 }
             })
         );
-//        for (int x = 0; x < pixels.length; ++x) {
-//            for (int y = 0; y < pixels.length; ++y) {
-//                float val = pixels[x][y];
-//                if (val == -1) {
-//                    continue;
-//                }
-//                List<Float> neighbors = new ArrayList<>();
-//                for (int i = x - 1; i <= x + 1; ++i) {
-//                    for (int j = y - 1; j <= y + 1; ++j) {
-//                        if ((x == i && y == j)
-//                                || i < 0
-//                                || j < 0
-//                                || i >= pixels.length
-//                                || j >= pixels[0].length
-//                                || pixels[i][j] == -1) {
-//                            continue;
-//                        }
-//                        neighbors.add(pixels[i][j]);
-//                    }
-//                }
-//                if (neighbors.size() > 0) {
-//                    float c = neighbors.get(0);
-//                    boolean flag = true;
-//                    for (float v : neighbors) {
-//                        if (v != c) {
-//                            flag = false;
-//                            break;
-//                        }
-//                    }
-//                    if (flag) {
-//                        pixels[x][y] = c;
-//                    }
-//                }
-//            }
-//        }
 }
 
 
@@ -254,16 +219,16 @@ class ChangeDetector {
     private static final FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 
     /**
-     *
-     * @param beforeCollection
-     * @param afterCollection
-     * @return
-     * @throws IOException
+     * Get land-use collections changes
+     * @param beforeCollection before sensed land-use collection
+     * @param afterCollection after sensed land-use collection
+     * @return land-use change collection
      */
-    private SimpleFeatureCollection getIntersections(SimpleFeatureCollection beforeCollection, SimpleFeatureStore afterCollection) throws IOException {
+    private static SimpleFeatureCollection getIntersections(SimpleFeatureCollection beforeCollection, SimpleFeatureCollection afterCollection) {
         SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
+        typeBuilder.setName("LUCD");
         typeBuilder.setCRS(beforeCollection.getSchema().getCoordinateReferenceSystem());
-        typeBuilder.add("geom", MultiPolygon.class);
+        typeBuilder.add("the_geom", MultiPolygon.class);
         typeBuilder.add("before", Integer.class);
         typeBuilder.add("after", Integer.class);
         final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
@@ -276,19 +241,22 @@ class ChangeDetector {
             SimpleFeature feature = it.next();
             Geometry geometry = (Geometry) feature.getDefaultGeometry();
             Filter filter = ff.intersects(ff.property(geomPropertyName), ff.literal(geometry));
-            SimpleFeatureCollection interCollection = afterCollection.getFeatures(filter);
+            SimpleFeatureCollection interCollection = afterCollection.subCollection(filter);
             if (interCollection != null) {
                 SimpleFeatureIterator sfi = interCollection.features();
                 while (sfi.hasNext()) {
                     SimpleFeature afterFeature = sfi.next();
                     Geometry afterGeometry = (Geometry) afterFeature.getDefaultGeometry();
-                    Geometry intersection = geometry.intersection(afterGeometry);
-                    if (intersection instanceof MultiPolygon) {
-                        featureBuilder.add(intersection);
-                        featureBuilder.add(feature.getAttribute("value"));
-                        featureBuilder.add(afterFeature.getAttribute("value"));
-                        SimpleFeature intersectionFeature = featureBuilder.buildFeature(null);
-                        collection.add(intersectionFeature);
+                    if (afterGeometry instanceof Polygon || afterCollection instanceof MultiPolygon) {
+                        Geometry intersection = geometry.intersection(afterGeometry);
+                        if (!intersection.isEmpty()) { // TODO: Types
+                            intersection.setUserData(geometry);
+                            featureBuilder.add(intersection);
+                            featureBuilder.add(feature.getAttribute("value"));
+                            featureBuilder.add(afterFeature.getAttribute("value"));
+                            SimpleFeature intersectionFeature = featureBuilder.buildFeature(null);
+                            collection.add(intersectionFeature);
+                        }
                     }
                 }
             }
