@@ -37,7 +37,7 @@ public class Utils {
      * @return shapefile data store
      * @throws IOException if file is not exists
      */
-    public static DataStore openShapefile(File shpFile) throws IOException {
+    static DataStore openShapefile(File shpFile) throws IOException {
         Map<String, Object> map = new TreeMap<>();
         try {
             map.put("url", shpFile.toURI().toURL());
@@ -67,6 +67,47 @@ public class Utils {
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
                     geometry = JTS.transform(geometry, transform);
                     featureBuilder.add(geometry);
+                    SimpleFeature transformedFeature = featureBuilder.buildFeature(null);
+                    transformedFC.add(transformedFeature);
+                }
+            } catch (TransformException e) {
+                e.printStackTrace();
+            }
+            // Replace collection
+            fc = transformedFC;
+        }
+        return fc;
+    }
+
+    /**
+     *
+     * @param fc
+     * @param crs
+     * @return
+     * @throws FactoryException
+     */
+    public static SimpleFeatureCollection transformToCRSWithAttributes(SimpleFeatureCollection fc, CoordinateReferenceSystem crs) throws FactoryException {
+        CoordinateReferenceSystem vectorCRS = fc.getSchema().getCoordinateReferenceSystem();
+        if (!CRS.equalsIgnoreMetadata(vectorCRS, crs)) {
+            MathTransform transform = CRS.findMathTransform(vectorCRS, crs, true);
+            // Create transformed feature collection
+            SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
+            typeBuilder.setName(fc.getSchema().getName());
+            typeBuilder.setCRS(crs);
+            typeBuilder.add("geom", MultiPolygon.class);
+            typeBuilder.add("value", Integer.class);
+            final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
+            DefaultFeatureCollection transformedFC = new DefaultFeatureCollection(null, null);
+            SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
+
+            try (SimpleFeatureIterator it = fc.features()) {
+                while (it.hasNext()) {
+                    SimpleFeature feature = it.next();
+                    Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                    geometry = JTS.transform(geometry, transform);
+                    featureBuilder.add(geometry);
+                    Integer value = (int)((double)feature.getAttribute("value"));
+                    featureBuilder.add(value);
                     SimpleFeature transformedFeature = featureBuilder.buildFeature(null);
                     transformedFC.add(transformedFeature);
                 }

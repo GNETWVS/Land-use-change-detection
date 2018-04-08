@@ -20,19 +20,16 @@ import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.process.raster.PolygonExtractionProcess;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 
-import java.awt.*;
 import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
-import java.util.List;
 import java.util.stream.IntStream;
 
 class ChangeDetector {
@@ -48,9 +45,13 @@ class ChangeDetector {
     private SentinelData afterSentinelData;
 
     ChangeDetector(SentinelData beforeSentinelData, SentinelData afterSentinelData) throws Exception {
-        // TODO: Проверка дат
-        this.beforeSentinelData = beforeSentinelData;
-        this.afterSentinelData = afterSentinelData;
+        if (beforeSentinelData.getSensingDate().before(afterSentinelData.getSensingDate())) {
+            this.beforeSentinelData = beforeSentinelData;
+            this.afterSentinelData = afterSentinelData;
+        } else {
+            this.beforeSentinelData = afterSentinelData;
+            this.afterSentinelData = beforeSentinelData;
+        }
 
         cropScenes();
     }
@@ -121,6 +122,7 @@ class ChangeDetector {
         return collection;
     }
 
+    // TODO: Delete or move to Utils
     private void writeShapefile(SimpleFeatureCollection collection, String name) throws IOException {
         ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
         File file = new File("C:\\Users\\Arthur\\Desktop\\1\\" + name);
@@ -249,13 +251,27 @@ class ChangeDetector {
                     Geometry afterGeometry = (Geometry) afterFeature.getDefaultGeometry();
                     if (afterGeometry instanceof Polygon || afterCollection instanceof MultiPolygon) {
                         Geometry intersection = geometry.intersection(afterGeometry);
-                        if (!intersection.isEmpty()) { // TODO: Types
+                        if (!intersection.isEmpty()) {
                             intersection.setUserData(geometry);
-                            featureBuilder.add(intersection);
-                            featureBuilder.add(feature.getAttribute("value"));
-                            featureBuilder.add(afterFeature.getAttribute("value"));
-                            SimpleFeature intersectionFeature = featureBuilder.buildFeature(null);
-                            collection.add(intersectionFeature);
+                            Object beforeClass = feature.getAttribute("value");
+                            Object afterClass = afterFeature.getAttribute("value");
+                            if (intersection instanceof Polygon || intersection instanceof MultiPolygon) {
+                                featureBuilder.add(intersection);
+                                featureBuilder.add(beforeClass);
+                                featureBuilder.add(afterClass);
+                                collection.add(featureBuilder.buildFeature(null));
+                            } else if (intersection instanceof GeometryCollection) {
+                                GeometryCollection geometryCollection = (GeometryCollection)intersection;
+                                for (int i = 0; i < geometryCollection.getNumGeometries(); ++i) {
+                                    Geometry geom = geometryCollection.getGeometryN(i);
+                                    if (!geom.isEmpty() && (geom instanceof Polygon || geom instanceof MultiPolygon)) {
+                                        featureBuilder.add(geom);
+                                        featureBuilder.add(beforeClass);
+                                        featureBuilder.add(afterClass);
+                                        collection.add(featureBuilder.buildFeature(null));
+                                    }
+                                }
+                            }
                         }
                     }
                 }
