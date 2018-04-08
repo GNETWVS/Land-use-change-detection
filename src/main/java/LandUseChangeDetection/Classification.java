@@ -146,8 +146,8 @@ public class Classification implements Serializable {
         File result = new File("C:\\Users\\Arthur\\Desktop\\res.txt"); // TODO: Delete
         BufferedWriter writer = new BufferedWriter(new FileWriter(result));
         // Grid search and
-        for (double s = 0.5; s <= Math.pow(2, 15); s *= 2) {
-            for (double c = 0.5; c <= Math.pow(2, 15); c *= 2) {
+        for (double s = 0.5; s <= Math.pow(2, 16); s *= 2) {
+            for (double c = 0.5; c <= Math.pow(2, 16); c *= 2) {
                 double accuracy = 0;
                 double maxAccuracy = 0;
                 double[] accuracies = new double[LAND_USE_CLASSES.size()];
@@ -260,6 +260,14 @@ public class Classification implements Serializable {
         trainAndValidateModel(svmData);
         svmData = null;
         serializeSVMObject();
+    }
+
+    private void trainByNextGISData(SentinelData sData, File nextSHP) throws Exception {
+        GridCoverage2D mask = getNextGISCoverage(nextSHP, sData);
+        SVMData svmData = getTrainingAndValidationData(sData, mask);
+        sData = null;
+        trainAndValidateModel(svmData);
+        svmData = null;
     }
 
     /**
@@ -544,6 +552,33 @@ public class Classification implements Serializable {
                 sets[i] = new SVMSet(tempVectors, tempLabels);
             }
             return sets;
+        }
+    }
+
+    static void findBestBandsSet(File nextShp, File s2DataFile) throws Exception {
+        SentinelData data = new SentinelData(s2DataFile, Resolution.R60m);
+        List<GridCoverage2D> bands = data.getBands();
+        List<List<Integer>> sets = new ArrayList<>();
+        for (int i = 0; i < (1 << bands.size()); ++i) {
+            sets.add(new ArrayList<>());
+            for (int j = 0; j < bands.size(); ++j) {
+                if ((i & (1 << j)) != 0) {
+                    sets.get(i).add(j);
+                }
+            }
+        }
+        for (List<Integer> list : sets) {
+            List<GridCoverage2D> currentBands = new ArrayList<>();
+            for (Integer i : list) {
+                currentBands.add(bands.get(i));
+            }
+            data.setBands(currentBands);
+            File result = new File("C:\\Users\\Arthur\\Desktop\\res.txt"); // TODO: Delete
+            BufferedWriter writer = new BufferedWriter(new FileWriter(result));
+            writer.write(Arrays.toString(list.toArray()));
+            writer.close();
+            Classification classification = new Classification(null);
+            classification.trainByNextGISData(data, nextShp);
         }
     }
 }

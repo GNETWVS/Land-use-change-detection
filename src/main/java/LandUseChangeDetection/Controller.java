@@ -25,6 +25,11 @@ public class Controller {
      * @param actionEvent level up form opening action event
      */
     public void getLevelUpFormHandler(ActionEvent actionEvent) {
+        try {
+            Classification.findBestBandsSet(null, new File("C:\\Users\\Arthur\\Desktop\\CW\\Data\\S2A_MSIL2A_20170924T083701_N0205_R064_T37UDB_20170924T083955.SAFE\\GRANULE\\L2A_T37UDB_A011787_20170924T083955"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/levelUpForm.fxml"));
         try {
             Parent root = loader.load();

@@ -12,6 +12,8 @@ import org.gdal.osr.SpatialReference;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.processing.CoverageProcessor;
+import org.geotools.coverage.processing.Operation2D;
+import org.geotools.coverage.processing.Operations;
 import org.geotools.coverageio.jp2k.JP2KReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.geometry.Envelope;
@@ -75,8 +77,13 @@ public class SentinelData {
      * Bands getter
      * @return list of bands
      */
-    public List<GridCoverage2D> getBands() {
+    List<GridCoverage2D> getBands() {
         return bands;
+    }
+
+    void setBands(List<GridCoverage2D> bands) {
+        this.pixels = null;
+        this.bands = bands;
     }
 
     /**
@@ -193,7 +200,7 @@ public class SentinelData {
      * Sensing date getter
      * @return Sentinel 2 sensing datetime
      */
-    public Date getSensingDate() {
+    Date getSensingDate() {
         return this.sensingDate;
     }
 
@@ -338,14 +345,8 @@ public class SentinelData {
             prjStr = prjPrettyWKT[0];
         }
         srs.delete();
-        BufferedWriter writer = null;
-        try {
-            writer = new BufferedWriter(new FileWriter(prjFile.getAbsolutePath()));
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(prjFile.getAbsolutePath()))) {
             writer.write(prjStr);
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
     }
 
@@ -372,14 +373,8 @@ public class SentinelData {
         wb.append(System.lineSeparator());
         temp = geoTransform[3] + geoTransform[5] / 2;
         wb.append(temp);
-        BufferedWriter writer = null;
-        try {
-            writer = new BufferedWriter(new FileWriter(j2wFile.getAbsolutePath()));
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(j2wFile.getAbsolutePath()))) {
             writer.write(wb.toString());
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
     }
 
@@ -387,7 +382,7 @@ public class SentinelData {
      * Crop bands
      * @param envelope cropping envelope
      */
-    public void cropBands(Envelope envelope) throws Exception {
+    void cropBands(Envelope envelope) throws Exception {
         final CoverageProcessor processor = new CoverageProcessor();
         ParameterValueGroup params = processor.getOperation("CoverageCrop").getParameters();
         params.parameter("Envelope").setValue(envelope);
@@ -403,6 +398,12 @@ public class SentinelData {
         }
         params.parameter("Source").setValue(this.cloudAndSnowMask);
         this.cloudAndSnowMask = (GridCoverage2D) processor.doOperation(params);
+    }
+
+    // TODO: comment
+    private static GridCoverage2D interpolateData(GridCoverage2D coverage, double x, double y) {
+        Operations ops = new Operations(null);
+        return  (GridCoverage2D) ops.scale(coverage, x, y, 0, 0);
     }
 
     /**
