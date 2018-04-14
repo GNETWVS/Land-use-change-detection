@@ -146,8 +146,8 @@ public class Classification implements Serializable {
         double[] classAccuracies = new double[LAND_USE_CLASSES.size()];
         SVMSet[] sets = svmData.getCrossValidationData();
         // Grid search and
-        for (double s = 0.5; s <= Math.pow(2, 13); s *= 2) {
-            for (double c = 0.5; c <= Math.pow(2, 13); c *= 2) {
+        for (double s = 0.5; s <= Math.pow(2, 14); s *= 2) {
+            for (double c = 0.5; c <= Math.pow(2, 14); c *= 2) {
                 double accuracy = 0;
                 double maxAccuracy = 0;
                 double[] accuracies = new double[LAND_USE_CLASSES.size()];
@@ -195,7 +195,12 @@ public class Classification implements Serializable {
                 for (int i = 0; i < accuracies.length; ++i) {
                     accuracies[i] /= sets.length;
                 }
-                writer.write("S = " + s + "; C = " + c + "; accuracy = " + accuracy + " " + Arrays.toString(accuracies));
+                double average = 0;
+                for (double a : accuracies) {
+                    average += a;
+                }
+                average /= accuracies.length;
+                writer.write("S = " + s + "; C = " + c + "; av = " + average + " accuracy = " + accuracy + " " + Arrays.toString(accuracies));
                 if (accuracy > totalAccuracy) {
                     totalAccuracy = accuracy;
                     classAccuracies = accuracies;
