@@ -18,6 +18,7 @@ import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.coverageio.jp2k.JP2KReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;

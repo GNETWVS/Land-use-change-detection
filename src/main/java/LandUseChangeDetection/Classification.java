@@ -1,7 +1,9 @@
 package LandUseChangeDetection;
 
+import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
+import org.apache.commons.lang.ArrayUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.data.DataStore;
@@ -143,11 +145,9 @@ public class Classification implements Serializable {
         double totalAccuracy = 0;
         double[] classAccuracies = new double[LAND_USE_CLASSES.size()];
         SVMSet[] sets = svmData.getCrossValidationData();
-        File result = new File("C:\\Users\\Arthur\\Desktop\\res.txt"); // TODO: Delete
-        BufferedWriter writer = new BufferedWriter(new FileWriter(result));
         // Grid search and
-        for (double s = 0.5; s <= Math.pow(2, 16); s *= 2) {
-            for (double c = 0.5; c <= Math.pow(2, 16); c *= 2) {
+        for (double s = 0.5; s <= Math.pow(2, 13); s *= 2) {
+            for (double c = 0.5; c <= Math.pow(2, 13); c *= 2) {
                 double accuracy = 0;
                 double maxAccuracy = 0;
                 double[] accuracies = new double[LAND_USE_CLASSES.size()];
@@ -204,6 +204,7 @@ public class Classification implements Serializable {
                     selectedS = s;
                 }
                 writer.write("RES: S = " + selectedS + "; C" + selectedC + "; ac = " + totalAccuracy + " " + Arrays.toString(classAccuracies) + "\n");
+                writer.newLine();
                 writer.flush();
             }
         }
@@ -230,7 +231,7 @@ public class Classification implements Serializable {
         double currentAccuracy = (double) count / predictions.length;
         writer.write("" + currentAccuracy);
         this.svm = selectedSVM;
-        writer.close();
+        writer.newLine();
     }
 
     private void learn(double[][] data, int[] label) {
@@ -345,7 +346,7 @@ public class Classification implements Serializable {
         SimpleFeatureSource vegetationFeatureSource = vegetationDataStore.getFeatureSource(vegetationTypeName);
         SimpleFeatureCollection vegetationFC = vegetationFeatureSource.getFeatures();
         // Convert
-        featureCollections = extractClassesFeatures(featureCollections, vegetationFC, "NATURAL", sentinelData.getCRS());
+        featureCollections[1] = extractClassesFeatures(featureCollections, vegetationFC, "NATURAL", sentinelData.getCRS())[1];
 
         // Convert result to simple feature collection array
         SimpleFeatureCollection[] simpleFeatureCollections = new SimpleFeatureCollection[featureCollections.length];
@@ -363,15 +364,18 @@ public class Classification implements Serializable {
         }
 
         // Merge masks
-        ParameterBlock maskOp = new ParameterBlock();
-        for (GridCoverage2D grid : masks) {
-            maskOp.addSource(grid.getRenderedImage());
-        }
-        RenderedOp op = JAI.create("add", maskOp);
-        GridCoverageFactory factory = new GridCoverageFactory();
-        ReferencedEnvelope envelope = new ReferencedEnvelope(masks[0].getEnvelope());
+        GridCoverage2D last = masks[0];
+        for (int i = 1; i < masks.length; ++i) {
+            ParameterBlock maskOp = new ParameterBlock();
+            maskOp.addSource(last.getRenderedImage());
+            maskOp.addSource(masks[i].getRenderedImage());
+            RenderedOp op = JAI.create("add", maskOp);
+            GridCoverageFactory factory = new GridCoverageFactory();
+            ReferencedEnvelope envelope = new ReferencedEnvelope(masks[0].getEnvelope());
+            last = factory.create("ClassesMask", op, envelope);
 
-        return factory.create("ClassesMask", op, envelope);
+        }
+        return last;
     }
 
     /**
@@ -555,6 +559,17 @@ public class Classification implements Serializable {
         }
     }
 
+    static File result = new File("C:\\Users\\lukin\\Desktop\\res.txt");
+    static BufferedWriter writer;
+
+    static {
+        try {
+            writer = new BufferedWriter(new FileWriter(result));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     static void findBestBandsSet(File nextShp, File s2DataFile) throws Exception {
         SentinelData data = new SentinelData(s2DataFile, Resolution.R60m);
         List<GridCoverage2D> bands = data.getBands();
@@ -567,18 +582,22 @@ public class Classification implements Serializable {
                 }
             }
         }
+        //sets = Lists.reverse(sets);
         for (List<Integer> list : sets) {
+            if (list.size() < 2) {
+                continue;
+            }
             List<GridCoverage2D> currentBands = new ArrayList<>();
             for (Integer i : list) {
                 currentBands.add(bands.get(i));
             }
             data.setBands(currentBands);
-            File result = new File("C:\\Users\\Arthur\\Desktop\\res.txt");
-            BufferedWriter writer = new BufferedWriter(new FileWriter(result));
             writer.write(Arrays.toString(list.toArray()));
-            writer.close();
+            writer.newLine();
+            writer.flush();
             Classification classification = new Classification(null);
             classification.trainByNextGISData(data, nextShp);
         }
+        writer.close();
     }
 }
