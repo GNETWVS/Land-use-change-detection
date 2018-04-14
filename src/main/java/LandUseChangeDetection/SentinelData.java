@@ -16,10 +16,12 @@ import org.geotools.coverage.processing.Operation2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.coverageio.jp2k.JP2KReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import javax.media.jai.Interpolation;
 import javax.media.jai.JAI;
 import javax.media.jai.RenderedOp;
 import java.awt.*;
@@ -401,9 +403,10 @@ public class SentinelData {
     }
 
     // TODO: comment
-    private static GridCoverage2D interpolateData(GridCoverage2D coverage, double x, double y) {
-        Operations ops = new Operations(null);
-        return  (GridCoverage2D) ops.scale(coverage, x, y, 0, 0);
+    private static GridCoverage2D interpolateData(GridCoverage2D coverage, GridGeometry gridGeometry2D) {
+        Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
+        return (GridCoverage2D) Operations.DEFAULT.resample(coverage, coverage.getCoordinateReferenceSystem(), gridGeometry2D, interpolation);
+
     }
 
     /**

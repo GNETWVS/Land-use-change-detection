@@ -26,7 +26,7 @@ public class Controller {
      */
     public void getLevelUpFormHandler(ActionEvent actionEvent) {
         try {
-            Classification.findBestBandsSet(null, new File("C:\\Users\\Arthur\\Desktop\\CW\\Data\\S2A_MSIL2A_20170924T083701_N0205_R064_T37UDB_20170924T083955.SAFE\\GRANULE\\L2A_T37UDB_A011787_20170924T083955"));
+            Classification.findBestBandsSet(new File("C:\\Users\\lukin\\Desktop\\united"), new File("C:\\Users\\lukin\\Desktop\\S2A_MSIL2A_20170818T085021_N0205_R107_T37UCB_20170818T085017.SAFE\\GRANULE\\L2A_T37UCB_A011258_20170818T085017"));
         } catch (Exception e) {
             e.printStackTrace();
         }
