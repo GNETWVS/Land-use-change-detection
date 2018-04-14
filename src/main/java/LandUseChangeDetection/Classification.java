@@ -573,7 +573,7 @@ public class Classification implements Serializable {
                 currentBands.add(bands.get(i));
             }
             data.setBands(currentBands);
-            File result = new File("C:\\Users\\Arthur\\Desktop\\res.txt"); // TODO: Delete
+            File result = new File("C:\\Users\\Arthur\\Desktop\\res.txt");
             BufferedWriter writer = new BufferedWriter(new FileWriter(result));
             writer.write(Arrays.toString(list.toArray()));
             writer.close();

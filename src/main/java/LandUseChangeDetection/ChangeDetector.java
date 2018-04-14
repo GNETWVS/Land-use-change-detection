@@ -44,6 +44,12 @@ class ChangeDetector {
      */
     private SentinelData afterSentinelData;
 
+    private SimpleFeatureCollection beforeClassification;
+
+    private SimpleFeatureCollection afterClassification;
+
+    private SimpleFeatureCollection changeDetection;
+
     ChangeDetector(SentinelData beforeSentinelData, SentinelData afterSentinelData) throws Exception {
         if (beforeSentinelData.getSensingDate().before(afterSentinelData.getSensingDate())) {
             this.beforeSentinelData = beforeSentinelData;

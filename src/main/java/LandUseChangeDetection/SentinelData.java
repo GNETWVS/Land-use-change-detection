@@ -9,10 +9,12 @@ import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconstConstants;
 import org.gdal.osr.SpatialReference;
+import org.geotools.coverage.CoverageFactoryFinder;
+import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
+import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.processing.CoverageProcessor;
-import org.geotools.coverage.processing.Operation2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.coverageio.jp2k.JP2KReader;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -20,10 +22,14 @@ import org.opengis.geometry.Envelope;
 import org.opengis.parameter.ParameterValueGroup;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import javax.media.jai.Interpolation;
 import javax.media.jai.JAI;
+import javax.media.jai.RasterFactory;
 import javax.media.jai.RenderedOp;
 import java.awt.*;
+import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.awt.image.renderable.ParameterBlock;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -251,7 +257,31 @@ public class SentinelData {
         bands = new ArrayList<>(files.length);
         for (File bandFile : files) {
             if (FilenameUtils.getExtension(bandFile.getName()).equals(JP2K_EXTENSION)) {
-                bands.add(openSentinelData(bandFile));
+                if (bandFile.getName().contains("TCL")) {
+                    GridCoverage2D band = openSentinelData(bandFile);
+                    Raster bandRaster = band.getRenderedImage().getData();
+                    int width = bandRaster.getWidth();
+                    int height = bandRaster.getHeight();
+                    WritableRaster raster1 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
+                    WritableRaster raster2 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
+                    WritableRaster raster3 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
+                    for (int i = 0; i < width; ++i) {
+                        for (int j = 0; j < height; ++j) {
+                            float[] vals = new float[3];
+                            band.evaluate(new GridCoordinates2D(i, j), vals);
+                            raster1.setSample(i, j, 0, vals[0]);
+                            raster2.setSample(i, j, 0, vals[1]);
+                            raster3.setSample(i, j, 0, vals[2]);
+                        }
+                        Envelope envelope = this.bands.get(0).getEnvelope2D();
+                        GridCoverageFactory factory = CoverageFactoryFinder.getGridCoverageFactory(null);
+                        this.bands.add(factory.create("1", raster1, envelope));
+                        this.bands.add(factory.create("2", raster2, envelope));
+                        this.bands.add(factory.create("2", raster3, envelope));
+                    }
+                } else {
+                    bands.add(openSentinelData(bandFile));
+                }
             }
         }
         fileBuilder = new StringBuilder(granuleDir.getAbsolutePath());
@@ -401,9 +431,9 @@ public class SentinelData {
     }
 
     // TODO: comment
-    private static GridCoverage2D interpolateData(GridCoverage2D coverage, double x, double y) {
-        Operations ops = new Operations(null);
-        return  (GridCoverage2D) ops.scale(coverage, x, y, 0, 0);
+    private static GridCoverage2D interpolateData(GridCoverage2D coverage, GridGeometry2D gridGeometry2D) {
+        Interpolation interpolation = Interpolation.getInstance(Interpolation.INTERP_NEAREST);
+        return (GridCoverage2D) Operations.DEFAULT.resample(coverage, coverage.getCoordinateReferenceSystem(), gridGeometry2D, interpolation);
     }
 
     /**
