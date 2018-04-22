@@ -26,6 +26,7 @@ import org.opengis.referencing.operation.TransformException;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -48,7 +49,7 @@ public class Utils {
         return DataStoreFinder.getDataStore(map);
     }
 
-    public static SimpleFeatureCollection transformToCRS(SimpleFeatureCollection fc, CoordinateReferenceSystem crs) throws FactoryException {
+    static SimpleFeatureCollection transformToCRS(SimpleFeatureCollection fc, CoordinateReferenceSystem crs) throws FactoryException {
         CoordinateReferenceSystem vectorCRS = fc.getSchema().getCoordinateReferenceSystem();
         if (!CRS.equalsIgnoreMetadata(vectorCRS, crs)) {
             MathTransform transform = CRS.findMathTransform(vectorCRS, crs, true);
@@ -56,7 +57,7 @@ public class Utils {
             SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
             typeBuilder.setName(fc.getSchema().getName());
             typeBuilder.setCRS(crs);
-            typeBuilder.add("geom", MultiPolygon.class);
+            typeBuilder.add("the_geom", MultiPolygon.class);
             final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
             DefaultFeatureCollection transformedFC = new DefaultFeatureCollection(null, null);
             SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
@@ -86,7 +87,7 @@ public class Utils {
      * @return
      * @throws FactoryException
      */
-    public static SimpleFeatureCollection transformToCRSWithAttributes(SimpleFeatureCollection fc, CoordinateReferenceSystem crs) throws FactoryException {
+    static SimpleFeatureCollection transformChangeDetectionCollectionCRS(SimpleFeatureCollection fc, CoordinateReferenceSystem crs) throws FactoryException {
         CoordinateReferenceSystem vectorCRS = fc.getSchema().getCoordinateReferenceSystem();
         if (!CRS.equalsIgnoreMetadata(vectorCRS, crs)) {
             MathTransform transform = CRS.findMathTransform(vectorCRS, crs, true);
@@ -94,8 +95,9 @@ public class Utils {
             SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
             typeBuilder.setName(fc.getSchema().getName());
             typeBuilder.setCRS(crs);
-            typeBuilder.add("geom", MultiPolygon.class);
-            typeBuilder.add("value", Integer.class);
+            typeBuilder.add("the_geom", MultiPolygon.class);
+            typeBuilder.add("before", Integer.class);
+            typeBuilder.add("after", Integer.class);
             final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
             DefaultFeatureCollection transformedFC = new DefaultFeatureCollection(null, null);
             SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
@@ -106,8 +108,8 @@ public class Utils {
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
                     geometry = JTS.transform(geometry, transform);
                     featureBuilder.add(geometry);
-                    Integer value = (int)((double)feature.getAttribute("value"));
-                    featureBuilder.add(value);
+                    featureBuilder.add(feature.getAttribute("before"));
+                    featureBuilder.add(feature.getAttribute("after"));
                     SimpleFeature transformedFeature = featureBuilder.buildFeature(null);
                     transformedFC.add(transformedFeature);
                 }

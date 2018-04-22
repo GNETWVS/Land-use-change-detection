@@ -562,13 +562,13 @@ public class Classification implements Serializable {
     static File result = new File("C:\\Users\\lukin\\Desktop\\res.txt");
     static BufferedWriter writer;
 
-    static {
-        try {
-            writer = new BufferedWriter(new FileWriter(result));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    static {
+//        try {
+//            writer = new BufferedWriter(new FileWriter(result));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     static void findBestBandsSet(File nextShp, File s2DataFile) throws Exception {
         SentinelData data = new SentinelData(s2DataFile, Resolution.R60m);

@@ -1,5 +1,6 @@
 package LandUseChangeDetection;
 
+import LandUseChangeDetection.data.Data;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.MultiPolygon;
@@ -20,10 +21,14 @@ import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.process.raster.PolygonExtractionProcess;
+import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.referencing.crs.CRSFactory;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.awt.image.Raster;
 import java.io.File;
@@ -118,13 +123,19 @@ class ChangeDetector {
         System.out.println(beforeCollection.getSchema().getCoordinateReferenceSystem());
         SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
                 null, Collections.singletonList(-1), null, null);
-        //afterCollection = Utils.transformToCRSWithAttributes(afterCollection, DefaultGeographicCRS.WGS84);
         System.out.println("Finish polygon extraction");
         // Get land use changes
         SimpleFeatureCollection collection = getIntersections(beforeCollection, afterCollection);
-        writeShapefile(beforeCollection, "1.shp");
-        writeShapefile(afterCollection, "2.shp");
-        writeShapefile(collection, "3.shp");
+//        writeShapefile(beforeCollection, "1.shp");
+//        writeShapefile(afterCollection, "2.shp");
+//        writeShapefile(collection, "3.shp");
+
+        this.beforeClassification = beforeCollection;
+        this.afterClassification = afterCollection;
+        this.changeDetection = Utils.transformChangeDetectionCollectionCRS(collection, CRS.decode("EPSG:4326"));
+
+        Data.getSquares(this.changeDetection);
+
         return collection;
     }
 

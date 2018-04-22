@@ -4,19 +4,18 @@ import LandUseChangeDetection.Utils;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.io.WKTReader;
-import org.geotools.data.*;
+import org.geotools.data.DataStore;
+import org.geotools.data.DataStoreFinder;
+import org.geotools.data.DefaultTransaction;
+import org.geotools.data.Transaction;
 import org.geotools.data.collection.ListFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.geotools.geojson.feature.FeatureJSON;
-import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
@@ -37,49 +36,30 @@ public class Data {
      */
     private static Connection connection;
 
-    static {
-        try {
-            Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection("jdbc:postgresql://127.0.0.1:5433/LUCD",
-                    "postgres", "admin");
-            // Add geometry type to the connection
-            ((PGConnection)connection).addDataType("geometry", (Class<? extends PGobject>) Class.forName("org.postgis.PGgeometry"));
-        } catch (ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
-            System.exit(0);
-        }
-    }
+//    static {
+//        try {
+//            Class.forName("org.postgresql.Driver");
+//            connection = DriverManager.getConnection("jdbc:postgresql://127.0.0.1:5433/LUCD",
+//                    "postgres", "admin");
+//            // Add geometry type to the connection
+//            ((PGConnection)connection).addDataType("geometry", (Class<? extends PGobject>) Class.forName("org.postgis.PGgeometry"));
+//        } catch (ClassNotFoundException | SQLException e) {
+//            e.printStackTrace();
+//            System.exit(0);
+//        }
+//    }
 
 
-    public static SimpleFeatureCollection getLandUseChanges(SimpleFeatureCollection before, Date beforeDate,
-                                                      SimpleFeatureCollection after, Date afterDate) throws Exception {
+    public static void getSquares(SimpleFeatureCollection collection) throws Exception {
         // Insert both collection to PostGIS
-        insertCollection(before, beforeDate);
-        insertCollection(after, afterDate);
-        if (before.getSchema().getCoordinateReferenceSystem() != after.getSchema().getCoordinateReferenceSystem()) {
-            Utils.transformToCRS(after, before.getSchema().getCoordinateReferenceSystem());
-        }
-        // Get changes
-        return getLandUseChanges(beforeDate, afterDate, before.getSchema().getCoordinateReferenceSystem());
+        insertCollection(collection);
     }
 
     /**
      * Insert clssificated collection into PostGIS
      * @param collection classificated collection
-     * @param date sensing date
      */
-    private static void insertCollection(SimpleFeatureCollection collection, Date date) throws IOException, FactoryException {
-        // Set time of date to 0
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.set(
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH),
-                0, 0, 0
-        );
-        date = calendar.getTime();
-
+    private static void insertCollection(SimpleFeatureCollection collection) throws IOException, FactoryException {
         Map<String, Object> params = new HashMap<>();
         params.put("dbtype", "postgis");
         params.put("host", "localhost");
@@ -90,31 +70,11 @@ public class Data {
         params.put("passwd", "admin");
         DataStore pgStore = DataStoreFinder.getDataStore(params);
         SimpleFeatureStore store = (SimpleFeatureStore) pgStore.getFeatureSource("landuses");
-        SimpleFeatureType featureType = store.getSchema();
-        System.out.println(collection.getSchema().getCoordinateReferenceSystem());
-        List<SimpleFeature> list = new ArrayList<>();
-        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(featureType);
 
-        SimpleFeatureIterator it = collection.features();
-        while (it.hasNext()) {
-            SimpleFeature feature = it.next();
-            featureBuilder.addAll(feature.getAttributes());
-            featureBuilder.add(new java.sql.Date(date.getTime()));
-            SimpleFeature datedFeature = featureBuilder.buildFeature(null);
-            list.add(datedFeature);
-        }
-        System.out.println(store.getSchema().getCoordinateReferenceSystem());
-        SimpleFeatureCollection dateFeatureCollection = new ListFeatureCollection(featureType, list);
-        CoordinateReferenceSystem crs = store.getSchema().getCoordinateReferenceSystem();
-        dateFeatureCollection = Utils.transformToCRS(dateFeatureCollection, crs);
-        it = dateFeatureCollection.features();
-        while (it.hasNext()) {
-            System.out.println(it.next().getDefaultGeometry());
-        }
-        Transaction tx = new DefaultTransaction("Add landuses");
+        Transaction tx = new DefaultTransaction("Add");
         store.setTransaction(tx);
         try {
-            store.addFeatures(dateFeatureCollection);
+            store.addFeatures(collection);
             tx.commit();
         } catch (Exception ex) {
             tx.rollback();
