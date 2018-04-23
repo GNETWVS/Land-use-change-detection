@@ -55,6 +55,8 @@ class ChangeDetector {
 
     private SimpleFeatureCollection changeDetection;
 
+    private List<LandUseChangeDetectionResult> areas;
+
     ChangeDetector(SentinelData beforeSentinelData, SentinelData afterSentinelData) throws Exception {
         if (beforeSentinelData.getSensingDate().before(afterSentinelData.getSensingDate())) {
             this.beforeSentinelData = beforeSentinelData;
@@ -118,9 +120,7 @@ class ChangeDetector {
         System.out.println("Polygon Extraction Before");
         SimpleFeatureCollection beforeCollection = process.execute(beforeClassesGrid,  0, true,
                 null, Collections.singletonList(-1), null, null);
-        //beforeCollection = Utils.transformToCRSWithAttributes(beforeCollection, DefaultGeographicCRS.WGS84);
         System.out.println("Polygon Extraction After");
-        System.out.println(beforeCollection.getSchema().getCoordinateReferenceSystem());
         SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
                 null, Collections.singletonList(-1), null, null);
         System.out.println("Finish polygon extraction");
@@ -134,8 +134,8 @@ class ChangeDetector {
         this.afterClassification = afterCollection;
         this.changeDetection = Utils.transformChangeDetectionCollectionCRS(collection, CRS.decode("EPSG:4326"));
 
-        Data.getSquares(this.changeDetection);
-
+        this.areas = Data.getSquares(this.changeDetection);
+        System.out.println(Arrays.toString(areas.toArray()));
         return collection;
     }
 
