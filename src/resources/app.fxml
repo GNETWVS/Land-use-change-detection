@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.web.WebView?>
 
-<BorderPane fx:id="appForm" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="419.0" prefWidth="622.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.Controller">
+<BorderPane fx:id="appForm" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="515.0" prefWidth="740.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.Controller">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
@@ -43,23 +45,29 @@
         </menus>
       </MenuBar>
    </top>
-   <left>
-      <AnchorPane prefHeight="394.0" prefWidth="214.0" BorderPane.alignment="CENTER">
-         <children>
-            <ButtonBar layoutX="7.0" layoutY="34.0" prefHeight="40.0" prefWidth="200.0">
-              <buttons>
-                  <Label text="Sentinel 1" />
-                <Button mnemonicParsing="false" onAction="#selectBeforeData" text="Button" />
-              </buttons>
-            </ButtonBar>
-            <ButtonBar layoutX="7.0" layoutY="74.0" prefHeight="40.0" prefWidth="200.0">
-              <buttons>
-                  <Label text="Sentinel 2" />
-                <Button mnemonicParsing="false" onAction="#selectAfterData" text="Button" />
-              </buttons>
-            </ButtonBar>
-            <Button layoutX="81.0" layoutY="156.0" mnemonicParsing="false" onAction="#detectChanges" text="Button" />
-         </children>
-      </AnchorPane>
-   </left>
+   <center>
+      <SplitPane dividerPositions="0.29797979797979796" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <items>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+               <children>
+                <Button layoutX="111.0" layoutY="100.0" mnemonicParsing="false" onAction="#selectAfterData" prefHeight="25.0" prefWidth="97.0" text="Select" AnchorPane.leftAnchor="111.0" AnchorPane.rightAnchor="8.0" />
+                <Button layoutX="111.0" layoutY="30.0" mnemonicParsing="false" onAction="#selectBeforeData" prefHeight="25.0" prefWidth="98.0" text="Select" AnchorPane.leftAnchor="111.0" AnchorPane.rightAnchor="8.0" />
+                  <Label layoutX="13.0" layoutY="104.0" text="Sentinel Data 2" />
+                  <Label layoutX="13.0" layoutY="34.0" text="Sentinel Data 1" />
+                  <Button layoutX="36.0" layoutY="235.0" mnemonicParsing="false" onAction="#detectChanges" text="Change detection" />
+                  <Label layoutX="16.0" layoutY="179.0" text="Region of Interest" />
+                  <Button layoutX="118.0" layoutY="175.0" mnemonicParsing="false" text="Select" />
+                  <Label layoutX="16.0" layoutY="207.0" text="Label" />
+                  <ComboBox fx:id="beforeGranulesComboBox" layoutX="13.0" layoutY="66.0" prefHeight="25.0" prefWidth="197.0" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="7.0" />
+                  <ComboBox fx:id="afterGranulesComboBox" layoutX="16.0" layoutY="137.0" prefHeight="25.0" prefWidth="192.0" AnchorPane.leftAnchor="13.0" AnchorPane.rightAnchor="7.0" />
+               </children>
+            </AnchorPane>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="392.0" prefWidth="203.0">
+               <children>
+                  <WebView prefHeight="395.0" prefWidth="434.0" />
+               </children>
+            </AnchorPane>
+        </items>
+      </SplitPane>
+   </center>
 </BorderPane>

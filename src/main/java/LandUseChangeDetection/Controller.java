@@ -1,17 +1,24 @@
 package LandUseChangeDetection;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.esa.s2tbx.dataio.VirtualPath;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Controller {
 
@@ -19,6 +26,8 @@ public class Controller {
      * Application form
      */
     public BorderPane appForm;
+    public ComboBox beforeGranulesComboBox;
+    public ComboBox afterGranulesComboBox;
 
     /**
      * Show level up form
@@ -93,18 +102,51 @@ public class Controller {
         }
     }
 
+
     private File beforeSentinelData;
 
     public void selectBeforeData(ActionEvent actionEvent) {
-        DirectoryChooser dc = new DirectoryChooser();
-        this.beforeSentinelData = dc.showDialog(appForm.getScene().getWindow());
+        FileChooser fc = new FileChooser();
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("XML files (*.xml)", "*.xml");
+        fc.setSelectedExtensionFilter(filter);
+        this.beforeSentinelData = fc.showOpenDialog(appForm.getScene().getWindow());
+        if (this.beforeSentinelData == null) {
+
+        } else {
+            try {
+                List<VirtualPath> granules = SentinelData.checkAndGetGranules(this.beforeSentinelData);
+                ObservableList<String> granulesList = FXCollections.observableArrayList(
+                        granules.stream().map(VirtualPath::getFullPathString)
+                                .collect(Collectors.toList()));
+                beforeGranulesComboBox.setItems(granulesList);
+                beforeGranulesComboBox.setValue(granulesList.get(0));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private File afterSentinelData;
 
     public void selectAfterData(ActionEvent actionEvent) {
-        DirectoryChooser dc = new DirectoryChooser();
-        this.afterSentinelData = dc.showDialog(appForm.getScene().getWindow());
+        FileChooser fc = new FileChooser();
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("XML files (*.xml)", "*.xml");
+        fc.setSelectedExtensionFilter(filter);
+        this.afterSentinelData = fc.showOpenDialog(appForm.getScene().getWindow());
+        if (this.afterSentinelData == null) {
+
+        } else {
+            try {
+                List<VirtualPath> granules = SentinelData.checkAndGetGranules(this.afterSentinelData);
+                ObservableList<String> granulesList = FXCollections.observableArrayList(
+                        granules.stream().map(VirtualPath::getFullPathString)
+                                .collect(Collectors.toList()));
+                afterGranulesComboBox.setItems(granulesList);
+                afterGranulesComboBox.setValue(granulesList.get(0));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void detectChanges(ActionEvent actionEvent) {
@@ -112,8 +154,10 @@ public class Controller {
             return;
         }
         try {
-            SentinelData firstSentinelData = new SentinelData(beforeSentinelData, Resolution.R60m);
-            SentinelData secondSentinelData = new SentinelData(afterSentinelData, Resolution.R60m);
+            File beforeSentinelGranuleFile = new File(beforeGranulesComboBox.getValue().toString());
+            File afterSentinelGranuleFile = new File(afterGranulesComboBox.getValue().toString());
+            SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, Resolution.R60m);
+            SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, Resolution.R60m);
             ChangeDetector detector = new ChangeDetector(
                     firstSentinelData, secondSentinelData
             );

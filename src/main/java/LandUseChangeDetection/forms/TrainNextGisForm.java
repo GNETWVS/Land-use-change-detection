@@ -56,6 +56,7 @@ public class TrainNextGisForm {
     public void selectSentinelTrainingData(ActionEvent actionEvent) {
         FileChooser dc = new FileChooser();
         FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("XML files (*.xml)", "*.xml");
+        dc.setSelectedExtensionFilter(filter);
         this.sentinel2ALevelFile = dc.showOpenDialog(learnNextGISForm.getScene().getWindow());
         if (this.sentinel2ALevelFile == null) {
             esaDataLabel.setText("Data not selected");
