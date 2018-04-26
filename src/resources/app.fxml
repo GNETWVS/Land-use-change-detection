@@ -64,7 +64,7 @@
             </AnchorPane>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="392.0" prefWidth="203.0">
                <children>
-                  <WebView prefHeight="395.0" prefWidth="434.0" />
+                  <WebView fx:id="webMap" prefHeight="489.0" prefWidth="517.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                </children>
             </AnchorPane>
         </items>
