@@ -54,7 +54,7 @@
                 <Button layoutX="111.0" layoutY="30.0" mnemonicParsing="false" onAction="#selectBeforeData" prefHeight="25.0" prefWidth="98.0" text="Select" AnchorPane.leftAnchor="111.0" AnchorPane.rightAnchor="8.0" />
                   <Label layoutX="13.0" layoutY="104.0" text="Sentinel Data 2" />
                   <Label layoutX="13.0" layoutY="34.0" text="Sentinel Data 1" />
-                  <Button layoutX="36.0" layoutY="235.0" mnemonicParsing="false" onAction="#detectChanges" text="Change detection" />
+                  <Button layoutX="12.0" layoutY="235.0" mnemonicParsing="false" onAction="#detectChanges" prefHeight="25.0" prefWidth="196.0" text="Change detection" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
                   <Label layoutX="16.0" layoutY="179.0" text="Region of Interest" />
                   <Button layoutX="118.0" layoutY="175.0" mnemonicParsing="false" text="Select" />
                   <Label layoutX="16.0" layoutY="207.0" text="Label" />

@@ -5,6 +5,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
+import javafx.concurrent.Task;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.data.DefaultTransaction;
@@ -27,6 +28,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CRSFactory;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
@@ -77,10 +79,13 @@ class ChangeDetector {
         afterSentinelData.cropBands(beforeSentinelData.getEnvelope());
     }
 
-    FeatureCollection getChanges() throws Exception {
+    private float[][] beforeClassificationMatrix;
+    private float[][] afterClassificationMatrix;
+
+    void certificate() throws Exception {
         if (beforeSentinelData.getHeight() != afterSentinelData.getHeight()
                 || beforeSentinelData.getWidth() != afterSentinelData.getWidth()) {
-            return null;
+            throw new Exception("Error, classification bands with different sizes");
         }
         Classification svm = Classification.getInstance();
         Raster beforeMask = beforeSentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
@@ -89,54 +94,84 @@ class ChangeDetector {
         beforeMask.getPixels(beforeMask.getMinX(), beforeMask.getMinY(), beforeMask.getWidth(), beforeMask.getHeight(), beforeMaskPixels);
         int[] afterMaskPixels = new int[afterMask.getWidth() * afterMask.getHeight()];
         afterMask.getPixels(afterMask.getMinX(), afterMask.getMinY(), afterMask.getWidth(), afterMask.getHeight(), afterMaskPixels);
-        float[][] beforeClassification = new float[beforeSentinelData.getWidth()][beforeSentinelData.getHeight()];
-        float[][] afterClassification = new float[afterSentinelData.getWidth()][afterSentinelData.getHeight()];
+        beforeClassificationMatrix = new float[beforeSentinelData.getWidth()][beforeSentinelData.getHeight()];
+        afterClassificationMatrix = new float[afterSentinelData.getWidth()][afterSentinelData.getHeight()];
         beforeSentinelData.getPixelVector(0);
         afterSentinelData.getPixelVector(0);
         int width = beforeSentinelData.getWidth();
         int height = beforeSentinelData.getHeight();
         IntStream.range(0, width - 1).parallel().forEach(x ->
             IntStream.range(0, height - 1).parallel().forEach(y -> {
-                System.out.println(x + " " + y);
+//                System.out.println(x + " " + y);
                 int i = x * height + y;
                 if (beforeMaskPixels[i] != 1 && afterMaskPixels[i] != 1) {
-                    beforeClassification[x][y] = svm.predict(beforeSentinelData.getPixelVector(i));
-                    afterClassification[x][y] = svm.predict(afterSentinelData.getPixelVector(i));
+                    beforeClassificationMatrix[x][y] = svm.predict(beforeSentinelData.getPixelVector(i));
+                    afterClassificationMatrix[x][y] = svm.predict(afterSentinelData.getPixelVector(i));
                 } else {
-                    beforeClassification[x][y] = -1;
-                    afterClassification[x][y] = -1;
+                    beforeClassificationMatrix[x][y] = -1;
+                    afterClassificationMatrix[x][y] = -1;
                 }
             })
         );
+
+//        // Check pixels
+//        checkPixels(beforeClassification);
+//        checkPixels(afterClassification);
+//        // Create classification raster
+//        GridCoverageFactory factory = new GridCoverageFactory();
+//        GridCoverage2D beforeClassesGrid = factory.create("Before classes", beforeClassification, beforeSentinelData.getEnvelope());
+//        GridCoverage2D afterClassesGrid = factory.create("After classes", afterClassification, afterSentinelData.getEnvelope());
+//        // Raster to vector
+//        final PolygonExtractionProcess process = new PolygonExtractionProcess();
+//        System.out.println("Polygon Extraction Before");
+//        SimpleFeatureCollection beforeCollection = process.execute(beforeClassesGrid,  0, true,
+//                null, Collections.singletonList(-1), null, null);
+//        System.out.println("Polygon Extraction After");
+//        SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
+//                null, Collections.singletonList(-1), null, null);
+//        System.out.println("Finish polygon extraction");
+//        // Get land use changes
+//        SimpleFeatureCollection collection = getIntersections(beforeCollection, afterCollection);
+////        writeShapefile(beforeCollection, "1.shp");
+////        writeShapefile(afterCollection, "2.shp");
+////        writeShapefile(collection, "3.shp");
+//
+//        this.beforeClassification = beforeCollection;
+//        this.afterClassification = afterCollection;
+//        this.changeDetection = Utils.transformChangeDetectionCollectionCRS(collection, CRS.decode("EPSG:4326"));
+//
+//        this.areas = Data.getSquares(this.changeDetection);
+//        System.out.println(Arrays.toString(areas.toArray()));
+//        return collection;
+    }
+
+    void checkAndFixPixels() {
         // Check pixels
-        checkPixels(beforeClassification);
-        checkPixels(afterClassification);
+        checkPixels(beforeClassificationMatrix);
+        checkPixels(afterClassificationMatrix);
+    }
+
+    void extractPolygons() {
         // Create classification raster
         GridCoverageFactory factory = new GridCoverageFactory();
-        GridCoverage2D beforeClassesGrid = factory.create("Before classes", beforeClassification, beforeSentinelData.getEnvelope());
-        GridCoverage2D afterClassesGrid = factory.create("After classes", afterClassification, afterSentinelData.getEnvelope());
+        GridCoverage2D beforeClassesGrid = factory.create("Before classes", beforeClassificationMatrix, beforeSentinelData.getEnvelope());
+        GridCoverage2D afterClassesGrid = factory.create("After classes", afterClassificationMatrix, afterSentinelData.getEnvelope());
         // Raster to vector
         final PolygonExtractionProcess process = new PolygonExtractionProcess();
-        System.out.println("Polygon Extraction Before");
-        SimpleFeatureCollection beforeCollection = process.execute(beforeClassesGrid,  0, true,
+        this.beforeClassification = process.execute(beforeClassesGrid,  0, true,
                 null, Collections.singletonList(-1), null, null);
-        System.out.println("Polygon Extraction After");
-        SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
+//        System.out.println("Polygon Extraction After");
+        this.afterClassification = process.execute(afterClassesGrid, 0, true,
                 null, Collections.singletonList(-1), null, null);
-        System.out.println("Finish polygon extraction");
-        // Get land use changes
-        SimpleFeatureCollection collection = getIntersections(beforeCollection, afterCollection);
-//        writeShapefile(beforeCollection, "1.shp");
-//        writeShapefile(afterCollection, "2.shp");
-//        writeShapefile(collection, "3.shp");
+    }
 
-        this.beforeClassification = beforeCollection;
-        this.afterClassification = afterCollection;
-        this.changeDetection = Utils.transformChangeDetectionCollectionCRS(collection, CRS.decode("EPSG:4326"));
+    void detectLandUseChanges() {
+        this.changeDetection = getIntersections(this.beforeClassification, this.afterClassification);
+    }
 
+    void calculateLUCDAreas() throws Exception {
+        this.changeDetection = Utils.transformChangeDetectionCollectionCRS(this.changeDetection, CRS.decode("EPSG:4326"));
         this.areas = Data.getSquares(this.changeDetection);
-        System.out.println(Arrays.toString(areas.toArray()));
-        return collection;
     }
 
     // TODO: Delete or move to Utils

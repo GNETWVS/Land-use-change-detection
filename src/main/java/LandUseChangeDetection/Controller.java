@@ -1,16 +1,15 @@
 package LandUseChangeDetection;
 
-import LandUseChangeDetection.forms.SearchAndDownloadForm;
+import LandUseChangeDetection.forms.ProgressForm;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Worker;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextFormatter;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
@@ -18,8 +17,6 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.converter.NumberStringConverter;
-import netscape.javascript.JSObject;
 import org.esa.s2tbx.dataio.VirtualPath;
 
 import java.io.File;
@@ -186,12 +183,45 @@ public class Controller {
         try {
             File beforeSentinelGranuleFile = new File(beforeGranulesComboBox.getValue().toString());
             File afterSentinelGranuleFile = new File(afterGranulesComboBox.getValue().toString());
-            SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, Resolution.R60m);
-            SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, Resolution.R60m);
-            ChangeDetector detector = new ChangeDetector(
-                    firstSentinelData, secondSentinelData
-            );
-            detector.getChanges();
+
+            ProgressForm form = new ProgressForm();
+            Task<ChangeDetector> task = new Task<ChangeDetector>() {
+                @Override
+                protected ChangeDetector call() throws Exception {
+                    updateProgress(0, 1);
+                    updateMessage("Opening and parsing of " + beforeSentinelGranuleFile.getName());
+                    SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, Resolution.R60m);
+                    updateProgress(0.1, 1);
+                    updateMessage("Opening and parsing of " + afterSentinelGranuleFile.getName());
+                    SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, Resolution.R60m);
+                    updateProgress(0.2, 1);
+                    updateMessage("Bands cropping...");
+                    ChangeDetector detector = new ChangeDetector(firstSentinelData, secondSentinelData);
+                    updateProgress(0.3, 1);
+                    updateMessage("Bands classification and clouds and snow removing...");
+                    detector.certificate();
+                    updateProgress(0.5, 1);
+                    updateMessage("Land-use classification results checking and fixing...");
+                    detector.checkAndFixPixels();
+                    updateProgress(0.6, 1);
+                    updateMessage("Land-use classification vector extraction...");
+                    detector.extractPolygons();
+                    updateProgress(0.7, 1);
+                    updateMessage("Land-use change detection...");
+                    detector.detectLandUseChanges();
+                    updateProgress(0.8, 1);
+                    updateMessage("Land-use change areas calculation...");
+                    detector.calculateLUCDAreas();
+
+                    return detector;
+                }
+            };
+            form.activateProgressBar(task);
+            task.setOnSucceeded(event -> {
+                task.getValue();
+                form.getDialogStage().close();
+            });
+            new Thread(task).start();
         } catch (Exception e) {
             Utils.showErrorMessage("Error",
                     e.getMessage(),
