@@ -10,6 +10,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
@@ -35,8 +36,32 @@ public class Controller {
     public ComboBox afterGranulesComboBox;
     public WebView webMap;
 
+    /**
+     * Data resolutions
+     */
+    private final ObservableList<String> resolutions = FXCollections.observableArrayList( "60m", "20m");
+    public ComboBox resolutionBox;
+    public Label waterLabel;
+    public Label buildLevel;
+    public Label forestLabel;
+    public Label waLabel;
+    public Label wbLabel;
+    public Label wfLabel;
+    public Label awLabel;
+    public Label abLabel;
+    public Label afLabel;
+    public Label bwLabel;
+    public Label baLabel;
+    public Label bfLabel;
+    public Label faLabel;
+    public Label fwLabel;
+    public Label fbLabel;
+    public Label agriLabel;
+
     @FXML
     void initialize(){
+        resolutionBox.setItems(resolutions);
+        resolutionBox.setValue("60m");
         WebEngine webEngine = webMap.getEngine();
         File mapIndexFile = new File("src/resources/AppWebForm/index.html");
         webEngine.load("file:" + mapIndexFile.getAbsolutePath());
@@ -176,6 +201,8 @@ public class Controller {
         }
     }
 
+    private ChangeDetector lucd;
+
     public void detectChanges(ActionEvent actionEvent) {
         if (beforeSentinelData == null || afterSentinelData == null) {
             return;
@@ -183,6 +210,7 @@ public class Controller {
         try {
             File beforeSentinelGranuleFile = new File(beforeGranulesComboBox.getValue().toString());
             File afterSentinelGranuleFile = new File(afterGranulesComboBox.getValue().toString());
+            final Resolution resolution = resolutionBox.getValue().equals("60m") ? Resolution.R60m : Resolution.R20m;
 
             ProgressForm form = new ProgressForm();
             Task<ChangeDetector> task = new Task<ChangeDetector>() {
@@ -190,10 +218,10 @@ public class Controller {
                 protected ChangeDetector call() throws Exception {
                     updateProgress(0, 1);
                     updateMessage("Opening and parsing of " + beforeSentinelGranuleFile.getName());
-                    SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, Resolution.R60m);
+                    SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, resolution);
                     updateProgress(0.1, 1);
                     updateMessage("Opening and parsing of " + afterSentinelGranuleFile.getName());
-                    SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, Resolution.R60m);
+                    SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution);
                     updateProgress(0.2, 1);
                     updateMessage("Bands cropping...");
                     ChangeDetector detector = new ChangeDetector(firstSentinelData, secondSentinelData);
@@ -212,13 +240,103 @@ public class Controller {
                     updateProgress(0.8, 1);
                     updateMessage("Land-use change areas calculation...");
                     detector.calculateLUCDAreas();
+                    updateProgress(0.9, 1);
 
                     return detector;
                 }
             };
             form.activateProgressBar(task);
             task.setOnSucceeded(event -> {
-                task.getValue();
+                this.lucd = task.getValue();
+                List<LandUseChangeDetectionResult> areas = lucd.getAreas();
+                for (LandUseChangeDetectionResult area : areas) {
+                    switch (area.getBefore()) {
+                        case 0: {
+                            switch (area.getAfter()) {
+                                case 0: {
+                                    waterLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 1: {
+                                    waLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 2: {
+                                    wbLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 3: {
+                                    wfLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 1: {
+                            switch (area.getAfter()) {
+                                case 0: {
+                                    awLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 1: {
+                                    agriLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 2: {
+                                    abLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 3: {
+                                    afLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 2: {
+                            switch (area.getAfter()) {
+                                case 0: {
+                                    bwLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 1: {
+                                    baLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 2: {
+                                    buildLevel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 3: {
+                                    bfLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 3: {
+                            switch (area.getAfter()) {
+                                case 0: {
+                                    fwLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 1: {
+                                    faLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 2: {
+                                    fbLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                                case 3: {
+                                    forestLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
                 form.getDialogStage().close();
             });
             new Thread(task).start();
