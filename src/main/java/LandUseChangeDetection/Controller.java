@@ -4,6 +4,7 @@ import LandUseChangeDetection.forms.ProgressForm;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -18,6 +19,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import jdk.nashorn.api.scripting.JSObject;
 import org.esa.s2tbx.dataio.VirtualPath;
 
 import java.io.File;
@@ -58,19 +60,16 @@ public class Controller {
     public Label fbLabel;
     public Label agriLabel;
 
+    WebEngine webEngine;
+
     @FXML
     void initialize(){
         resolutionBox.setItems(resolutions);
         resolutionBox.setValue("60m");
-        WebEngine webEngine = webMap.getEngine();
+        this.webEngine = webMap.getEngine();
         File mapIndexFile = new File("src/resources/AppWebForm/index.html");
         webEngine.load("file:" + mapIndexFile.getAbsolutePath());
-//        webEngine.getLoadWorker().stateProperty().addListener((ov, oldState, newState) -> {
-//            if (newState == Worker.State.SUCCEEDED) {
-//                JSObject window = (JSObject) webEngine.executeScript("window");
-//                window.setMember("app", new SearchAndDownloadForm.DownloadAndSearchApplication());
-//            }
-//        });
+        webEngine.setJavaScriptEnabled(true);
     }
 
     /**
@@ -247,97 +246,104 @@ public class Controller {
             };
             form.activateProgressBar(task);
             task.setOnSucceeded(event -> {
-                this.lucd = task.getValue();
-                List<LandUseChangeDetectionResult> areas = lucd.getAreas();
-                for (LandUseChangeDetectionResult area : areas) {
-                    switch (area.getBefore()) {
-                        case 0: {
-                            switch (area.getAfter()) {
-                                case 0: {
-                                    waterLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
+                try {
+                    this.lucd = task.getValue();
+                    List<LandUseChangeDetectionResult> areas = lucd.getAreas();
+                    for (LandUseChangeDetectionResult area : areas) {
+                        switch (area.getBefore()) {
+                            case 0: {
+                                switch (area.getAfter()) {
+                                    case 0: {
+                                        waterLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 1: {
+                                        waLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 2: {
+                                        wbLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 3: {
+                                        wfLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
                                 }
-                                case 1: {
-                                    waLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 2: {
-                                    wbLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 3: {
-                                    wfLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
+                                break;
                             }
-                            break;
-                        }
-                        case 1: {
-                            switch (area.getAfter()) {
-                                case 0: {
-                                    awLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
+                            case 1: {
+                                switch (area.getAfter()) {
+                                    case 0: {
+                                        awLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 1: {
+                                        agriLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 2: {
+                                        abLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 3: {
+                                        afLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
                                 }
-                                case 1: {
-                                    agriLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 2: {
-                                    abLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 3: {
-                                    afLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
+                                break;
                             }
-                            break;
-                        }
-                        case 2: {
-                            switch (area.getAfter()) {
-                                case 0: {
-                                    bwLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
+                            case 2: {
+                                switch (area.getAfter()) {
+                                    case 0: {
+                                        bwLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 1: {
+                                        baLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 2: {
+                                        buildLevel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 3: {
+                                        bfLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
                                 }
-                                case 1: {
-                                    baLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 2: {
-                                    buildLevel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 3: {
-                                    bfLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
+                                break;
                             }
-                            break;
-                        }
-                        case 3: {
-                            switch (area.getAfter()) {
-                                case 0: {
-                                    fwLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
+                            case 3: {
+                                switch (area.getAfter()) {
+                                    case 0: {
+                                        fwLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 1: {
+                                        faLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 2: {
+                                        fbLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
+                                    case 3: {
+                                        forestLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        break;
+                                    }
                                 }
-                                case 1: {
-                                    faLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 2: {
-                                    fbLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
-                                case 3: {
-                                    forestLabel.textProperty().setValue(area.getArea() + " m\u2072");
-                                    break;
-                                }
+                                break;
                             }
-                            break;
                         }
                     }
+                    Utils.writeGeoJSON(this.lucd.getChangeDetection(), "src/resources/AppWebForm/res/result.json");
+                    this.webEngine.executeScript("showResult();");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    form.getDialogStage().close();
                 }
-                form.getDialogStage().close();
             });
             new Thread(task).start();
         } catch (Exception e) {

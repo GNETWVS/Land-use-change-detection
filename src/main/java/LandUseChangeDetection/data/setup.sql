@@ -19,7 +19,7 @@ DROP TABLE landUses;
 
 CREATE TABLE landUses(
   id            SERIAL PRIMARY KEY,
-  the_geom      geometry NOT NULL,
+  the_geom      geography NOT NULL,
   before        INTEGER NOT NULL,
   after         INTEGER NOT NULL
 );

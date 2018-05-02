@@ -57,7 +57,15 @@ class ChangeDetector {
 
     private SimpleFeatureCollection changeDetection;
 
+    SimpleFeatureCollection getChangeDetection() {
+        return  this.changeDetection;
+    }
+
     private List<LandUseChangeDetectionResult> areas;
+
+    List<LandUseChangeDetectionResult> getAreas() {
+        return this.areas;
+    }
 
     ChangeDetector(SentinelData beforeSentinelData, SentinelData afterSentinelData) throws Exception {
         if (beforeSentinelData.getSensingDate().before(afterSentinelData.getSensingDate())) {
@@ -165,40 +173,13 @@ class ChangeDetector {
                 null, Collections.singletonList(-1), null, null);
     }
 
-    void detectLandUseChanges() {
+    void detectLandUseChanges() throws FactoryException {
         this.changeDetection = getIntersections(this.beforeClassification, this.afterClassification);
+        this.changeDetection = Utils.transformChangeDetectionCollectionCRS(this.changeDetection, DefaultGeographicCRS.WGS84);
     }
 
     void calculateLUCDAreas() throws Exception {
-        this.changeDetection = Utils.transformChangeDetectionCollectionCRS(this.changeDetection, CRS.decode("EPSG:4326"));
         this.areas = Data.getSquares(this.changeDetection);
-    }
-
-    // TODO: Delete or move to Utils
-    private void writeShapefile(SimpleFeatureCollection collection, String name) throws IOException {
-        ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
-        File file = new File("C:\\Users\\Arthur\\Desktop\\1\\" + name);
-        Map<String, Serializable> params = new HashMap<>();
-        params.put("url", file.toURI().toURL());
-        params.put("create spatial index", Boolean.TRUE);
-        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createDataStore(params);
-        dataStore.createSchema(collection.getSchema());
-        Transaction transaction = new DefaultTransaction("create");
-        String typeName = dataStore.getTypeNames()[0];
-        SimpleFeatureSource featureSource = dataStore.getFeatureSource(typeName);
-        if (featureSource instanceof SimpleFeatureStore) {
-            SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
-            featureStore.setTransaction(transaction);
-            try {
-                featureStore.addFeatures(collection);
-                transaction.commit();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                transaction.rollback();
-            } finally {
-                transaction.close();
-            }
-        }
     }
 
     /**
@@ -208,7 +189,6 @@ class ChangeDetector {
     private void checkPixels(float[][] pixels) {
         IntStream.range(0, pixels.length - 1).parallel().forEach(x ->
             IntStream.range(0, pixels[x].length - 1).parallel().forEach(y -> {
-                System.out.println("Ch " + x + " " + y);
                 float val = pixels[x][y];
                 if (val != -1) {
                     List<Float> neighbors = new ArrayList<>();

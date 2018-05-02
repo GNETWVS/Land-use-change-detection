@@ -7,11 +7,18 @@ import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
+import org.geotools.data.DefaultTransaction;
+import org.geotools.data.Transaction;
+import org.geotools.data.shapefile.ShapefileDataStore;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.geojson.feature.FeatureJSON;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
@@ -23,9 +30,9 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -169,5 +176,39 @@ public class Utils {
         params.parameter("Envelope").setValue(envelope);
         params.parameter("Source").setValue(scene);
         return (GridCoverage2D)processor.doOperation(params);
+    }
+
+    static void writeShapefile(SimpleFeatureCollection collection, String path) throws IOException {
+        ShapefileDataStoreFactory dataStoreFactory = new ShapefileDataStoreFactory();
+        File file = new File(path);
+        Map<String, Serializable> params = new HashMap<>();
+        params.put("url", file.toURI().toURL());
+        params.put("create spatial index", Boolean.TRUE);
+        ShapefileDataStore dataStore = (ShapefileDataStore) dataStoreFactory.createDataStore(params);
+        dataStore.createSchema(collection.getSchema());
+        Transaction transaction = new DefaultTransaction("create");
+        String typeName = dataStore.getTypeNames()[0];
+        SimpleFeatureSource featureSource = dataStore.getFeatureSource(typeName);
+        if (featureSource instanceof SimpleFeatureStore) {
+            SimpleFeatureStore featureStore = (SimpleFeatureStore) featureSource;
+            featureStore.setTransaction(transaction);
+            try {
+                featureStore.addFeatures(collection);
+                transaction.commit();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                transaction.rollback();
+            } finally {
+                transaction.close();
+            }
+        }
+    }
+
+    static void writeGeoJSON(SimpleFeatureCollection collection, String path) throws IOException {
+        FeatureJSON featureJSON = new FeatureJSON();
+        File file = new File(path);
+        try (FileOutputStream fos = new FileOutputStream(file)){
+            featureJSON.writeFeatureCollection(collection, fos);
+        }
     }
 }
