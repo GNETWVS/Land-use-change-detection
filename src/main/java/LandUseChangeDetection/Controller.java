@@ -21,6 +21,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import jdk.nashorn.api.scripting.JSObject;
 import org.esa.s2tbx.dataio.VirtualPath;
+import org.geotools.data.DataStore;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,6 +60,7 @@ public class Controller {
     public Label fwLabel;
     public Label fbLabel;
     public Label agriLabel;
+    public Label roiLabel;
 
     WebEngine webEngine;
 
@@ -223,7 +225,18 @@ public class Controller {
                     SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution);
                     updateProgress(0.2, 1);
                     updateMessage("Bands cropping...");
-                    ChangeDetector detector = new ChangeDetector(firstSentinelData, secondSentinelData);
+                    ChangeDetector detector;
+                    if (roiFile == null) {
+                        detector = new ChangeDetector(firstSentinelData, secondSentinelData);
+                    } else {
+                        DataStore store = Utils.openShapefile(roiFile);
+                        if (store == null || store.getTypeNames() == null || store.getTypeNames().length == 0){
+                            throw new NullPointerException("ROI vector data store is null");
+                        }
+                        String waterTypeName = store.getTypeNames()[0];
+                        detector = new ChangeDetector(firstSentinelData, secondSentinelData,
+                                Utils.openShapefile(roiFile).getFeatureSource(waterTypeName).getFeatures());
+                    }
                     updateProgress(0.3, 1);
                     updateMessage("Bands classification and clouds and snow removing...");
                     detector.certificate();
@@ -350,6 +363,20 @@ public class Controller {
             Utils.showErrorMessage("Error",
                     e.getMessage(),
                     Arrays.toString(e.getStackTrace()));
+        }
+    }
+
+    private File roiFile;
+
+    public void selectROI(ActionEvent actionEvent) {
+        FileChooser fc = new FileChooser();
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("Shapefile (*.shp)", "*.shp");
+        fc.setSelectedExtensionFilter(filter);
+        this.roiFile = fc.showOpenDialog(appForm.getScene().getWindow());
+        if (this.roiFile == null) {
+            roiLabel.setText("");
+        } else {
+            roiLabel.setText(roiFile.getAbsolutePath());
         }
     }
 }

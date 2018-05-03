@@ -1,10 +1,7 @@
 package LandUseChangeDetection;
 
 import LandUseChangeDetection.data.Data;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
-import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.geom.*;
 import javafx.concurrent.Task;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -79,12 +76,51 @@ class ChangeDetector {
         cropScenes();
     }
 
+    ChangeDetector(SentinelData beforeSentinelData, SentinelData afterSentinelData, SimpleFeatureCollection collection) throws Exception {
+        if (beforeSentinelData.getSensingDate().before(afterSentinelData.getSensingDate())) {
+            this.beforeSentinelData = beforeSentinelData;
+            this.afterSentinelData = afterSentinelData;
+        } else {
+            this.beforeSentinelData = afterSentinelData;
+            this.afterSentinelData = beforeSentinelData;
+        }
+
+        cropScenes();
+        cropByROI(collection);
+    }
+
     private void cropScenes() throws Exception {
         if (beforeSentinelData == null || afterSentinelData == null) {
             return;
         }
         beforeSentinelData.cropBands(afterSentinelData.getEnvelope());
         afterSentinelData.cropBands(beforeSentinelData.getEnvelope());
+    }
+
+    private void cropByROI(SimpleFeatureCollection collection) throws Exception {
+        if (beforeSentinelData == null || afterSentinelData == null || collection == null) {
+            return;
+        }
+        if (beforeSentinelData.getCRS() != collection.getSchema().getCoordinateReferenceSystem()) {
+            collection = Utils.transformToCRS(collection, beforeSentinelData.getCRS());
+        }
+        // Get geom union
+        Geometry union = null;
+        SimpleFeatureIterator it = collection.features();
+        while (it.hasNext()) {
+            Geometry geometry = (Geometry) it.next().getDefaultGeometry();
+            if (geometry == null) {
+                continue;
+            }
+            if (union == null) {
+                union = geometry;
+            } else {
+                union = union.union(geometry);
+            }
+        }
+
+        beforeSentinelData.cropBands(union);
+        beforeSentinelData.cropBands(union);
     }
 
     private float[][] beforeClassificationMatrix;
@@ -121,36 +157,6 @@ class ChangeDetector {
                 }
             })
         );
-
-//        // Check pixels
-//        checkPixels(beforeClassification);
-//        checkPixels(afterClassification);
-//        // Create classification raster
-//        GridCoverageFactory factory = new GridCoverageFactory();
-//        GridCoverage2D beforeClassesGrid = factory.create("Before classes", beforeClassification, beforeSentinelData.getEnvelope());
-//        GridCoverage2D afterClassesGrid = factory.create("After classes", afterClassification, afterSentinelData.getEnvelope());
-//        // Raster to vector
-//        final PolygonExtractionProcess process = new PolygonExtractionProcess();
-//        System.out.println("Polygon Extraction Before");
-//        SimpleFeatureCollection beforeCollection = process.execute(beforeClassesGrid,  0, true,
-//                null, Collections.singletonList(-1), null, null);
-//        System.out.println("Polygon Extraction After");
-//        SimpleFeatureCollection afterCollection = process.execute(afterClassesGrid, 0, true,
-//                null, Collections.singletonList(-1), null, null);
-//        System.out.println("Finish polygon extraction");
-//        // Get land use changes
-//        SimpleFeatureCollection collection = getIntersections(beforeCollection, afterCollection);
-////        writeShapefile(beforeCollection, "1.shp");
-////        writeShapefile(afterCollection, "2.shp");
-////        writeShapefile(collection, "3.shp");
-//
-//        this.beforeClassification = beforeCollection;
-//        this.afterClassification = afterCollection;
-//        this.changeDetection = Utils.transformChangeDetectionCollectionCRS(collection, CRS.decode("EPSG:4326"));
-//
-//        this.areas = Data.getSquares(this.changeDetection);
-//        System.out.println(Arrays.toString(areas.toArray()));
-//        return collection;
     }
 
     void checkAndFixPixels() {
@@ -222,30 +228,6 @@ class ChangeDetector {
             })
         );
 }
-
-
-
-//    /**
-//     * Get cropped and merged clouds and snow mask
-//     * @return cropped and merged Sentinel 2 data mask
-//     * @throws Exception if cannot read masks files
-//     */
-//    private GridCoverage2D getCloudsAndSnowMask() throws Exception {
-//        // Check sizes
-//        GridCoverage2D beforeMask = beforeSentinelData.getCloudsAndSnowMask();
-//        GridCoverage2D afterMask = afterSentinelData.getCloudsAndSnowMask();
-//        // JAI merging
-//        ParameterBlock mergeOp = new ParameterBlock();
-//        mergeOp.addSource(beforeMask.getRenderedImage());
-//        mergeOp.addSource(afterMask.getRenderedImage());
-//        //JAIExt.initJAIEXT();
-//        RenderedOp mask = JAI.create("Or", mergeOp);
-//
-//        GridCoverageFactory factory = new GridCoverageFactory();
-//        ReferencedEnvelope envelope = new ReferencedEnvelope(beforeMask.getEnvelope());
-//        ReferencedEnvelope envelope1 = new ReferencedEnvelope(afterMask.getEnvelope());
-//        return factory.create("Clouds and snow mask", mask, envelope);
-//    }
 
     /**
      * Filter factory
