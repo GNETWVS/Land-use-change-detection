@@ -101,6 +101,159 @@
                 $(data.features).each(function(key, data) {
                     geoJsonLayer.addData(data);
                 });
+                geoJsonLayer.eachLayer(function (data) {
+                    switch (data.feature.properties.before) {
+                        case 0: {
+                            switch (data.feature.properties.after) {
+                                case 0: {
+                                    data.setStyle({
+                                        color: '#1e90ff',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#1e90ff'
+                                    });
+                                    break;
+                                }
+                                case 1: {
+                                    data.setStyle({
+                                        color: '#b1e1ac',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#b1e1ac'
+                                    });
+                                    break;
+                                }
+                                case 2: {
+                                    data.setStyle({
+                                        color: '#f80000',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#f80000'
+                                    });
+                                    break;
+                                }
+                                case 3: {
+                                    data.setStyle({
+                                        color: '#ffe100',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#ffe100'
+                                    });
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 1: {
+                            switch (data.feature.properties.after) {
+                                case 0: {
+                                    data.setStyle({
+                                        color: '#f58b00',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#f58b00'
+                                    });
+                                    break;
+                                }
+                                case 1: {
+                                    data.setStyle({
+                                        color: '#1fff28',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#1fff28'
+                                    });
+                                    break;
+                                }
+                                case 2: {
+                                    data.setStyle({
+                                        color: '#ff00e1',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#ff00e1'
+                                    });
+                                    break;
+                                }
+                                case 3: {
+                                    data.setStyle({
+                                        color: '#00f8be',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#00f8be'
+                                    });
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 2: {
+                            switch (data.feature.properties.after) {
+                                case 0: {
+                                    data.setStyle({
+                                        color: '#593f22',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#593f22'
+                                    });
+                                    break;
+                                }
+                                case 1: {
+                                    data.setStyle({
+                                        color: '#b930ff',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#b930ff'
+                                    });
+                                    break;
+                                }
+                                case 2: {
+                                    data.setStyle({
+                                        color: '#afb9c3',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#afb9c3'
+                                    });
+                                    break;
+                                }
+                                case 3: {
+                                    data.setStyle({
+                                        color: '#0f1680',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#0f1680'
+                                    });
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case 3: {
+                            switch (data.feature.properties.after) {
+                                case 0: {
+                                    data.setStyle({
+                                        color: '#e89c9c',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#e89c9c'
+                                    });
+                                    break;
+                                }
+                                case 1: {
+                                    data.setStyle({
+                                        color: '#2b9722',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#2b9722'
+                                    });
+                                    break;
+                                }
+                                case 2: {
+                                    data.setStyle({
+                                        color: '#221fff',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#221fff'
+                                    });
+                                    break;
+                                }
+                                case 3: {
+                                    data.setStyle({
+                                        color: '#144616',
+                                        fillOpacity: 0.9,
+                                        fillColor: '#144616'
+                                    });
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                });
+                map_object.flyToBounds(geoJsonLayer.getBounds(), 11);
             }
         }).error(function() {});
     }

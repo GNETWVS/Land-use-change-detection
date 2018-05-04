@@ -1,10 +1,19 @@
 package LandUseChangeDetection.forms;
 
 import LandUseChangeDetection.Utils;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.util.converter.NumberStringConverter;
@@ -22,11 +31,21 @@ import org.odata4j.consumer.ODataConsumer;
 import org.odata4j.consumer.ODataConsumers;
 import org.odata4j.consumer.behaviors.BasicAuthenticationBehavior;
 
+import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 public class SearchAndDownloadForm {
@@ -39,7 +58,7 @@ public class SearchAndDownloadForm {
     /**
      * ESA Open Search base
      */
-    private static final String OPEN_SEARCH_QUERY_BASE = "https://scihub.copernicus.eu/apihub/search?q=";
+    private static final String OPEN_SEARCH_QUERY_BASE = "https://scihub.copernicus.eu/apihub/search?start=0&rows=100&q=";
 
     /**
      * ESA open hub api url
@@ -57,6 +76,11 @@ public class SearchAndDownloadForm {
     public DatePicker sensingFinishDate;
     public TextField maxCloudPercentage;
     public WebView webMap;
+    public SplitPane splitPane;
+    public Button changeButton;
+    public Button loginButton;
+    public ListView resultListView;
+    public TabPane tab;
 
     /**
      * Open search client
@@ -72,6 +96,13 @@ public class SearchAndDownloadForm {
      * Geometry JS Leaflet string
      */
     private String geometryJS;
+
+    public void changeLogin(ActionEvent actionEvent) {
+        this.loginTextField.setDisable(false);
+        this.passwordTextField.setDisable(false);
+        this.loginButton.setDisable(false);
+        this.changeButton.setDisable(true);
+    }
 
     /**
      * JS connector
@@ -139,10 +170,12 @@ public class SearchAndDownloadForm {
         // Create OData consumer
         consumerBuilder.setClientBehaviors(new BasicAuthenticationBehavior(login, password));
         this.consumer = consumerBuilder.build();
+        this.loginButton.setDisable(true);
+        this.changeButton.setDisable(false);
     }
 
 
-    public void searchDataHandler(ActionEvent actionEvent) {
+    public void searchDataHandler(ActionEvent actionEvent) throws URISyntaxException {
         Instant sensingStartDate = null;
         Instant sensingFinishDate = null;
         if (!this.sensingStartDate.getEditor().getText().isEmpty()) {
@@ -166,30 +199,43 @@ public class SearchAndDownloadForm {
                     "");
             return;
         }
-        // TODO: Сравнить даты и на обе даты
+        if (sensingStartDate != null && sensingFinishDate != null && sensingStartDate.isAfter(sensingFinishDate)) {
+            Utils.showErrorMessage("Error",
+                    "Sensing start date must be before sensing finish date",
+                    "");
+            return;
+        }
         // Create query url
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder.append("platformname:Sentinel-2");
         // Set up periods
         if (sensingStartDate != null && sensingFinishDate != null) {
-            queryBuilder.append("&")
-                    .append("endposition:%5B")
-                    .append(sensingStartDate.toString())
+            LocalDateTime start = LocalDateTime.ofInstant(sensingStartDate, ZoneId.systemDefault());
+            LocalDateTime finish = LocalDateTime.ofInstant(sensingFinishDate, ZoneId.systemDefault());
+            queryBuilder.append("%20AND%20")
+                    .append("beginposition:%5B")
+                    .append(start.getYear() + "-" + start.getMonthValue() + "-" + start.getDayOfMonth() + "T00:00:00.000Z")
                     .append("%20TO%20")
-                    .append(sensingFinishDate.toString())
+                    .append(finish.getYear() + "-" + finish.getMonthValue() + "-" + finish.getDayOfMonth() + "T23:59:59.000Z")
                     .append("%5D");
         }
         // Coverage intersection
         if (this.geometryJS != null) {
-            queryBuilder.append("&footprint:\"Intersects(")
-                    .append(geometryJS)
-                    .append(")\"");
+            queryBuilder.append("%20AND%20footprint%3A%22Intersects%28")
+                    .append(geometryJS
+                            .replace(" ", "%20")
+                            .replace(",", "%2C")
+                            .replace("(", "%28")
+                            .replace(")", "%29")
+                    )
+                    .append("%29%22");
         }
         // Set up clouds percentage
         if (maxCloudsPercentage != 100) {
-            queryBuilder.append("&cloudcoverpercentage:%5B0%20TO%20").append(maxCloudsPercentage).append("%5D");
+            queryBuilder.append("%20AND%20cloudcoverpercentage%3A%5B0%20TO%20").append(maxCloudsPercentage).append("%5D");
         }
         // Create open search query
+        System.out.println(OPEN_SEARCH_QUERY_BASE + queryBuilder.toString());
         ClientResponse response = this.abderaClient.get(OPEN_SEARCH_QUERY_BASE + queryBuilder.toString());
         List<Entry> entries = null;
         if (response.getType() == Response.ResponseType.SUCCESS) {
@@ -198,15 +244,76 @@ public class SearchAndDownloadForm {
             entries = feed.getEntries();
         } else {
             Utils.showErrorMessage("Error", "Open Search error", response.getType().toString());
-            Alert alert = new Alert(Alert.AlertType.ERROR);
+            return;
+        }
+        if (resultListView.getItems().size() > 0) {
+            resultListView.getItems().clear();
+        }
+        if (entries == null || entries.size() == 0) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Result");
+            alert.setHeaderText("Data not found");
+            alert.setContentText("Please, change request params");
+            alert.showAndWait();
+        } else {
+            ObservableList<Entry> e = FXCollections.observableArrayList();
+            e.addAll(entries);
+            resultListView.setCellFactory(c -> new SentinelDataResponse());
+            resultListView.setItems(e);
+            tab.getSelectionModel().select(1);
+        }
+    }
+
+    private class SentinelDataResponse extends ListCell<Entry> {
+        private BorderPane content = new BorderPane();
+        Label title = new Label();
+        Label summary = new Label();
+        Hyperlink link = new Hyperlink();
+        ImageView imageView = new ImageView();
+
+        public SentinelDataResponse() {
+            VBox vBox = new VBox();
+            vBox.setSpacing(4);
+            vBox.getChildren().addAll(title, link, summary);
+            content.setLeft(imageView);
+            content.setCenter(vBox);
+            //content.getChildren().addAll(imageView, title, link, summary);
+            setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            setGraphic(content);
         }
 
-//        for (OEntity entity : consumer.getEntities("Products")
-//                .filter("startswith(Name,'S2') and year(IngestionDate) eq 2017")
-//                .expand("Nodes")
-//                .execute()) {
-//            entity
-//            System.out.println(entity.getProperties());
-//        }
+        @Override
+        public void updateItem(Entry entry, boolean empty) {
+            super.updateItem(entry, empty);
+            if (entry == null || empty) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                title.setText(entry.getTitle());
+                link.setText(entry.getAlternateLink().getHref().toString());
+                summary.setText(entry.getSummary());
+                try {
+                    URLConnection uc = new java.net.URL(entry.getLink("icon").getHref().toString()).openConnection();
+                    String userpass = "artur7" + ":" + "9063228328a!";
+                    String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userpass.getBytes()));
+                    uc.setRequestProperty ("Authorization", basicAuth);
+                    InputStream in = uc.getInputStream();
+                    Image image = new Image(in, 120, 120, false, false);
+                    imageView.setImage(image);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                link.setOnAction(e -> {
+                    if (Desktop.isDesktopSupported()){
+                        try {
+                            Desktop.getDesktop().browse(new URI(link.getText()));
+                        } catch (IOException | URISyntaxException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+                });
+                setGraphic(content);
+            }
+        }
     }
 }

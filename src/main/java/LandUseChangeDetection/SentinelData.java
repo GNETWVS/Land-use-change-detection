@@ -1,5 +1,6 @@
 package LandUseChangeDetection;
 
+import com.vividsolutions.jts.geom.Geometry;
 import it.geosolutions.jaiext.JAIExt;
 import org.apache.commons.io.FilenameUtils;
 import org.esa.s2tbx.dataio.VirtualPath;
@@ -16,7 +17,9 @@ import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.coverage.grid.GridGeometry2D;
 import org.geotools.coverage.processing.CoverageProcessor;
 import org.geotools.coverage.processing.Operations;
+import org.geotools.coverage.processing.operation.Crop;
 import org.geotools.coverageio.jp2k.JP2KReader;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
@@ -417,6 +420,24 @@ public class SentinelData {
         final CoverageProcessor processor = new CoverageProcessor();
         ParameterValueGroup params = processor.getOperation("CoverageCrop").getParameters();
         params.parameter("Envelope").setValue(envelope);
+        ListIterator<GridCoverage2D> it = this.bands.listIterator();
+        while (it.hasNext()) {
+            GridCoverage2D band = it.next();
+            params.parameter("Source").setValue(band);
+            band = (GridCoverage2D) processor.doOperation(params);
+            it.set(band);
+        }
+        if (this.cloudAndSnowMask == null) {
+            this.getCloudsAndSnowMask();
+        }
+        params.parameter("Source").setValue(this.cloudAndSnowMask);
+        this.cloudAndSnowMask = (GridCoverage2D) processor.doOperation(params);
+    }
+
+    void cropBands(Geometry geometry) throws Exception {
+        final CoverageProcessor processor = new CoverageProcessor();
+        ParameterValueGroup params = processor.getOperation("CoverageCrop").getParameters();
+        params.parameter(Crop.PARAMNAME_ROI).setValue(geometry);
         ListIterator<GridCoverage2D> it = this.bands.listIterator();
         while (it.hasNext()) {
             GridCoverage2D band = it.next();

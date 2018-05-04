@@ -3,35 +3,64 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.web.WebView?>
 
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.forms.SearchAndDownloadForm">
    <children>
-      <SplitPane dividerPositions="0.38127090301003347" layoutX="151.0" layoutY="74.0" prefHeight="160.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <SplitPane fx:id="splitPane" dividerPositions="0.38127090301003347" layoutX="151.0" layoutY="74.0" prefHeight="160.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <items>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="398.0" prefWidth="204.0">
                <children>
-                  <DatePicker fx:id="sensingStartDate" layoutX="21.0" layoutY="160.0" prefHeight="25.0" prefWidth="195.0" />
-                  <DatePicker fx:id="sensingFinishDate" layoutX="19.0" layoutY="206.0" prefHeight="25.0" prefWidth="195.0" />
-                  <Button fx:id="searchButton" layoutX="97.0" layoutY="352.0" mnemonicParsing="false" onAction="#searchDataHandler" text="Search" />
-                  <PasswordField fx:id="passwordTextField" layoutX="23.0" layoutY="76.0" prefHeight="25.0" prefWidth="195.0" />
-                  <TextField fx:id="loginTextField" layoutX="22.0" layoutY="34.0" prefHeight="25.0" prefWidth="195.0" />
-                  <Label layoutX="22.0" layoutY="14.0" text="Login" />
-                  <Label layoutX="23.0" layoutY="59.0" text="Password" />
-                  <Button fx:id="loginButton" layoutX="95.0" layoutY="108.0" mnemonicParsing="false" onAction="#loginHandler" text="Login" />
-                  <Label layoutX="23.0" layoutY="143.0" text="Sensing start date:" />
-                  <Label layoutX="23.0" layoutY="191.0" text="Sensing finish date" />
-                  <TextField fx:id="maxCloudPercentage" layoutX="99.0" layoutY="252.0" prefHeight="25.0" prefWidth="38.0" text="100" />
-                  <Label layoutX="23.0" layoutY="256.0" text="Max cloud %" />
+                  <DatePicker fx:id="sensingStartDate" layoutX="10.0" layoutY="187.0" prefHeight="25.0" prefWidth="195.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                  <DatePicker fx:id="sensingFinishDate" layoutX="12.0" layoutY="229.0" prefHeight="25.0" prefWidth="195.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                  <Button fx:id="searchButton" layoutX="15.0" layoutY="301.0" mnemonicParsing="false" onAction="#searchDataHandler" text="Search" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                  <PasswordField fx:id="passwordTextField" layoutX="23.0" layoutY="76.0" prefHeight="25.0" prefWidth="195.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                  <TextField fx:id="loginTextField" layoutX="22.0" layoutY="34.0" prefHeight="25.0" prefWidth="195.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                  <Label layoutX="22.0" layoutY="14.0" text="Login" AnchorPane.leftAnchor="12.0" />
+                  <Label layoutX="23.0" layoutY="59.0" text="Password" AnchorPane.leftAnchor="12.0" />
+                  <Button fx:id="loginButton" layoutX="25.0" layoutY="110.0" mnemonicParsing="false" onAction="#loginHandler" prefHeight="25.0" prefWidth="98.0" text="Login" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                  <Label layoutX="13.0" layoutY="170.0" text="Sensing start date:" AnchorPane.leftAnchor="13.0" />
+                  <Label layoutX="12.0" layoutY="212.0" text="Sensing finish date" AnchorPane.leftAnchor="12.0" />
+                  <TextField fx:id="maxCloudPercentage" layoutX="90.0" layoutY="268.0" prefHeight="25.0" prefWidth="52.0" text="100" AnchorPane.leftAnchor="90.0" AnchorPane.rightAnchor="83.0" />
+                  <Label layoutX="14.0" layoutY="272.0" text="Max cloud %" AnchorPane.leftAnchor="12.0" />
+                  <Button fx:id="changeButton" disable="true" layoutX="13.0" layoutY="139.0" mnemonicParsing="false" onAction="#changeLogin" prefHeight="25.0" prefWidth="98.0" text="Change" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
                </children>
             </AnchorPane>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="447.0" prefWidth="435.0">
                <children>
-                  <WebView fx:id="webMap" prefHeight="400.0" prefWidth="367.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                  <TabPane fx:id="tab" prefHeight="398.0" prefWidth="367.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <tabs>
+                      <Tab text="Map">
+                        <content>
+                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <AnchorPane layoutX="-2.0" layoutY="-51.0" prefHeight="232.0" prefWidth="225.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                       <children>
+                                          <WebView fx:id="webMap" prefHeight="400.0" prefWidth="367.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                       </children>
+                                    </AnchorPane>
+                                 </children>
+                              </AnchorPane>
+                        </content>
+                      </Tab>
+                      <Tab text="Result">
+                        <content>
+                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <ListView fx:id="resultListView" layoutX="7.0" layoutY="8.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                 </children>
+                              </AnchorPane>
+                        </content>
+                      </Tab>
+                    </tabs>
+                  </TabPane>
                </children></AnchorPane>
         </items>
       </SplitPane>

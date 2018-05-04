@@ -101,9 +101,9 @@ public class Controller {
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setTitle("Search and Download Sentinel 2 Data");
-            stage.setScene(new Scene(root, 600, 800));
-            stage.setMaximized(true);
-            stage.setResizable(false);
+            stage.setMinWidth(800);
+            stage.setMinHeight(600);
+            stage.setScene(new Scene(root, 800, 600));
             stage.getIcons().add(new Image("/icon.png"));
             stage.showAndWait();
         } catch (IOException e) {

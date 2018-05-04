@@ -28,7 +28,7 @@
           </Menu>
             <Menu mnemonicParsing="false" text="Sentinel 2">
               <items>
-                <MenuItem fx:id="dowloadMenuItem" mnemonicParsing="false" onAction="#openDownloadingForm" text="Download" />
+                <MenuItem fx:id="dowloadMenuItem" mnemonicParsing="false" onAction="#openDownloadingForm" text="Search and Download" />
                   <MenuItem fx:id="levelUpMenuItem" mnemonicParsing="false" onAction="#getLevelUpFormHandler" text="Level Up Data" />
               </items>
             </Menu>
@@ -55,10 +55,10 @@
                 <Button layoutX="111.0" layoutY="30.0" mnemonicParsing="false" onAction="#selectBeforeData" prefHeight="25.0" prefWidth="98.0" text="Select" AnchorPane.leftAnchor="111.0" AnchorPane.rightAnchor="12.0" />
                   <Label layoutX="12.0" layoutY="110.0" text="Sentinel Data 2" AnchorPane.leftAnchor="12.0" />
                   <Label layoutX="13.0" layoutY="34.0" text="Sentinel Data 1" AnchorPane.leftAnchor="12.0" />
-                  <Button layoutX="12.0" layoutY="268.0" mnemonicParsing="false" onAction="#detectChanges" prefHeight="25.0" prefWidth="196.0" text="Change detection" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                  <Button layoutX="12.0" layoutY="278.0" mnemonicParsing="false" onAction="#detectChanges" prefHeight="25.0" prefWidth="196.0" text="Change detection" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
                   <Label layoutX="12.0" layoutY="221.0" text="Region of Interest" />
-                  <Button layoutX="118.0" layoutY="217.0" mnemonicParsing="false" text="Select" />
-                  <Label layoutX="12.0" layoutY="244.0" text="Label" />
+                  <Button fx:id="selectROIButton" layoutX="118.0" layoutY="217.0" mnemonicParsing="false" onAction="#selectROI" prefHeight="25.0" prefWidth="172.0" text="Select" AnchorPane.leftAnchor="114.0" AnchorPane.rightAnchor="12.0" />
+                  <Label fx:id="roiLabel" layoutX="12.0" layoutY="254.0" />
                   <ComboBox fx:id="beforeGranulesComboBox" layoutX="13.0" layoutY="66.0" prefHeight="25.0" prefWidth="197.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
                   <ComboBox fx:id="afterGranulesComboBox" layoutX="15.0" layoutY="142.0" prefHeight="25.0" prefWidth="192.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="9.0" />
                   <Label layoutX="14.0" layoutY="183.0" text="Resolution" AnchorPane.leftAnchor="14.0" />
@@ -95,22 +95,22 @@
                   <Label layoutX="63.0" layoutY="585.0" text="F to W" />
                   <Label layoutX="63.0" layoutY="605.0" text="F to A" />
                   <Label layoutX="63.0" layoutY="625.0" text="F to B" />
-                  <Label fx:id="waterLabel" layoutX="138.0" layoutY="312.0" text="Label" />
-                  <Label fx:id="agriLabel" layoutX="138.0" layoutY="333.0" text="Label" />
-                  <Label fx:id="buildLevel" layoutX="138.0" layoutY="354.0" text="Label" />
-                  <Label fx:id="forestLabel" layoutX="138.0" layoutY="375.0" text="Label" />
-                  <Label fx:id="waLabel" layoutX="138.0" layoutY="396.0" text="Label" />
-                  <Label fx:id="wbLabel" layoutX="138.0" layoutY="417.0" text="Label" />
-                  <Label fx:id="wfLabel" layoutX="138.0" layoutY="438.0" text="Label" />
-                  <Label fx:id="awLabel" layoutX="138.0" layoutY="459.0" text="Label" />
-                  <Label fx:id="abLabel" layoutX="138.0" layoutY="480.0" text="Label" />
-                  <Label fx:id="afLabel" layoutX="138.0" layoutY="501.0" text="Label" />
-                  <Label fx:id="bwLabel" layoutX="138.0" layoutY="522.0" text="Label" />
-                  <Label fx:id="baLabel" layoutX="138.0" layoutY="543.0" text="Label" />
-                  <Label fx:id="bfLabel" layoutX="138.0" layoutY="564.0" text="Label" />
-                  <Label fx:id="faLabel" layoutX="138.0" layoutY="605.0" text="Label" />
-                  <Label fx:id="fwLabel" layoutX="138.0" layoutY="585.0" text="Label" />
-                  <Label fx:id="fbLabel" layoutX="138.0" layoutY="625.0" text="Label" />
+                  <Label fx:id="waterLabel" layoutX="138.0" layoutY="312.0" />
+                  <Label fx:id="agriLabel" layoutX="138.0" layoutY="333.0" />
+                  <Label fx:id="buildLevel" layoutX="138.0" layoutY="354.0" />
+                  <Label fx:id="forestLabel" layoutX="138.0" layoutY="375.0" />
+                  <Label fx:id="waLabel" layoutX="138.0" layoutY="396.0" />
+                  <Label fx:id="wbLabel" layoutX="138.0" layoutY="417.0" />
+                  <Label fx:id="wfLabel" layoutX="138.0" layoutY="438.0" />
+                  <Label fx:id="awLabel" layoutX="138.0" layoutY="459.0" />
+                  <Label fx:id="abLabel" layoutX="138.0" layoutY="480.0" />
+                  <Label fx:id="afLabel" layoutX="138.0" layoutY="501.0" />
+                  <Label fx:id="bwLabel" layoutX="138.0" layoutY="522.0" />
+                  <Label fx:id="baLabel" layoutX="138.0" layoutY="543.0" />
+                  <Label fx:id="bfLabel" layoutX="138.0" layoutY="564.0" />
+                  <Label fx:id="faLabel" layoutX="138.0" layoutY="605.0" />
+                  <Label fx:id="fwLabel" layoutX="138.0" layoutY="585.0" />
+                  <Label fx:id="fbLabel" layoutX="138.0" layoutY="625.0" />
                </children>
             </AnchorPane>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="688.0" prefWidth="717.0">

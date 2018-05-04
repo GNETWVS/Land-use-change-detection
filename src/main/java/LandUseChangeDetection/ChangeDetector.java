@@ -148,7 +148,8 @@ class ChangeDetector {
             IntStream.range(0, height - 1).parallel().forEach(y -> {
 //                System.out.println(x + " " + y);
                 int i = x * height + y;
-                if (beforeMaskPixels[i] != 1 && afterMaskPixels[i] != 1) {
+                if (beforeMaskPixels[i] != 1 && beforeMaskPixels[i] != -9999.0
+                        && afterMaskPixels[i] != 1 && afterMaskPixels[i] != -9999.0) {
                     beforeClassificationMatrix[x][y] = svm.predict(beforeSentinelData.getPixelVector(i));
                     afterClassificationMatrix[x][y] = svm.predict(afterSentinelData.getPixelVector(i));
                 } else {
