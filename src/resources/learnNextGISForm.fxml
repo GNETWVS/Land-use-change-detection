@@ -8,7 +8,7 @@
 
 <AnchorPane fx:id="learnNextGISForm" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.forms.TrainNextGisForm">
 <children>
-    <TitledPane animated="false" collapsible="false" layoutX="28.0" layoutY="14.0" text="Input" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="14.0">
+    <TitledPane animated="false" collapsible="false" layoutX="28.0" layoutY="14.0" prefHeight="276.0" prefWidth="572.0" text="Input" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="14.0">
         <content>
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="343.0" prefWidth="570.0">
                 <children>
@@ -24,14 +24,14 @@
                   <Label layoutX="26.0" layoutY="87.0" text="Granule" />
                   <Label layoutX="26.0" layoutY="125.0" text="Resolution" />
                   <ComboBox fx:id="resolutionBox" disable="true" layoutX="100.0" layoutY="121.0" prefWidth="110.0" />
-                  <Button fx:id="exportAButton" layoutX="13.0" layoutY="256.0" mnemonicParsing="false" onAction="#exportAHandler" text="Export SVM A Model" />
-                  <Button fx:id="exportBButton" layoutX="14.0" layoutY="291.0" mnemonicParsing="false" onAction="#exportBHandler" prefHeight="25.0" prefWidth="127.0" text="Export SVM B Model" />
                   <Button fx:id="cancelButton" cancelButton="true" layoutX="278.0" layoutY="212.0" mnemonicParsing="false" text="Cancel" />
-                  <Button fx:id="importAButton" layoutX="155.0" layoutY="256.0" mnemonicParsing="false" onAction="#importAHandler" text="Import SVM A Model" />
-                  <Button fx:id="importBButton" layoutX="155.0" layoutY="291.0" mnemonicParsing="false" onAction="#importBHandler" text="Import SVM B Model" />
                 </children>
             </AnchorPane>
         </content>
     </TitledPane>
+      <Button fx:id="exportAButton" layoutX="22.0" layoutY="301.0" mnemonicParsing="false" onAction="#exportAHandler" prefHeight="25.0" prefWidth="251.0" text="Export SVM A Model" />
+      <Button fx:id="exportBButton" layoutX="22.0" layoutY="343.0" mnemonicParsing="false" onAction="#exportBHandler" prefHeight="25.0" prefWidth="251.0" text="Export SVM B Model" />
+      <Button fx:id="importAButton" layoutX="327.0" layoutY="301.0" mnemonicParsing="false" onAction="#importAHandler" prefHeight="25.0" prefWidth="251.0" text="Import SVM A Model" />
+      <Button fx:id="importBButton" layoutX="327.0" layoutY="343.0" mnemonicParsing="false" onAction="#importBHandler" prefHeight="25.0" prefWidth="251.0" text="Import SVM B Model" />
 </children>
 </AnchorPane>

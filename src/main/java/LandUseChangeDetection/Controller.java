@@ -116,24 +116,6 @@ public class Controller {
      * @param actionEvent OSM learn form opening action event
      */
     public void openLearnOSMForm(ActionEvent actionEvent) {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/learnOSMForm.fxml"));
-        try {
-            Parent root = loader.load();
-            Stage stage = new Stage();
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setTitle("Learn SVM by OSM");
-            stage.setScene(new Scene(root, 450, 450));
-            stage.showAndWait();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Open learn form based on NextGis data
-     * @param actionEvent NextGis learn form opening action event
-     */
-    public void openNextGisLearningForm(ActionEvent actionEvent) {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/learnNextGISForm.fxml"));
         try {
             Parent root = loader.load();

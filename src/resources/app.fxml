@@ -35,7 +35,6 @@
             <Menu mnemonicParsing="false" text="SVM">
               <items>
                 <MenuItem fx:id="learnOSMMenuItem" mnemonicParsing="false" onAction="#openLearnOSMForm" text="Learn OSM" />
-                  <MenuItem fx:id="learnNextGis" mnemonicParsing="false" onAction="#openNextGisLearningForm" text="Learn NextGIS" />
               </items>
             </Menu>
           <Menu mnemonicParsing="false" text="Help">

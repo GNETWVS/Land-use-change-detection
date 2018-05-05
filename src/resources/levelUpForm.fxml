@@ -13,7 +13,7 @@
         <content>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                <children>
-                  <Label layoutX="14.0" layoutY="21.0" text="Sentinel 2 2A Level Data" />
+                  <Label layoutX="14.0" layoutY="21.0" text="Sentinel 2 1C Level Data" />
                   <Button fx:id="openSentinel1" defaultButton="true" layoutX="151.0" layoutY="17.0" mnemonicParsing="false" onAction="#openSentinel1CLevelData" text="Select File" />
                   <Button fx:id="create2ADataButton" defaultButton="true" disable="true" layoutX="117.0" layoutY="181.0" mnemonicParsing="false" onAction="#createL2ADataHandler" text="Create Sentinel 2 Level 2A Data" />
                   <ProgressBar fx:id="progressBar" layoutX="38.0" layoutY="139.0" prefHeight="18.0" prefWidth="366.0" progress="0.0" AnchorPane.leftAnchor="7.0" AnchorPane.rightAnchor="7.0" />

@@ -15,6 +15,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.util.Callback;
 import javafx.util.converter.NumberStringConverter;
 import org.apache.abdera.Abdera;
 import org.apache.abdera.model.Document;
@@ -97,6 +98,20 @@ public class SearchAndDownloadForm {
     void initialize(){
         maxCloudPercentage.setTextFormatter(new TextFormatter<>(new NumberStringConverter()));
         maxCloudPercentage.setText("100");
+        sensingStartDate.setValue(LocalDate.now());
+        sensingFinishDate.setValue(LocalDate.now());
+        final Callback<DatePicker, DateCell> dayCellFactory = (final DatePicker datePicker) -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item.isAfter(LocalDate.now())) { //Disable all dates after required date
+                    setDisable(true);
+                    setStyle("-fx-background-color: #ffc0cb;"); //To set background on different color
+                }
+            }
+        };
+        sensingStartDate.setDayCellFactory(dayCellFactory);
+        sensingFinishDate.setDayCellFactory(dayCellFactory);
         WebEngine webEngine = webMap.getEngine();
         File mapIndexFile = new File("src/resources/SaDWebForm/index.html");
         webEngine.load("file:" + mapIndexFile.getAbsolutePath());
