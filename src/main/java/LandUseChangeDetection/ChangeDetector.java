@@ -2,6 +2,7 @@ package LandUseChangeDetection;
 
 import LandUseChangeDetection.data.Data;
 import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.simplify.TopologyPreservingSimplifier;
 import javafx.concurrent.Task;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
@@ -228,7 +229,30 @@ class ChangeDetector {
                 }
             })
         );
-}
+    }
+
+    public String getWKT() throws Exception {
+        if (this.changeDetection == null) {
+            throw new Exception("Error, calculate lucd before");
+        }
+        StringBuilder builder = new StringBuilder(this.changeDetection.getSchema().getCoordinateReferenceSystem().toWKT());
+        builder.append("\n\n");
+        SimpleFeatureIterator it = this.changeDetection.features();
+        while (it.hasNext()) {
+            SimpleFeature feature = it.next();
+            builder.append(beforeSentinelData.getSensingDate().toString());
+            builder.append(": ");
+            builder.append(getLandUseClass((int)feature.getAttribute("before")));
+            builder.append(" ");
+            builder.append(afterSentinelData.getSensingDate().toString());
+            builder.append(": ");
+            builder.append(getLandUseClass((int)feature.getAttribute("after")));
+            builder.append(" ");
+            builder.append(TopologyPreservingSimplifier.simplify((Geometry) it.next().getDefaultGeometry(), 0).toString());
+            builder.append("\n");
+        }
+        return builder.toString();
+    }
 
     /**
      * Filter factory
@@ -293,5 +317,13 @@ class ChangeDetector {
             }
         }
         return collection;
+    }
+
+    private static String getLandUseClass(int c) throws Exception {
+        if (c == 0) return "water";
+        if (c == 1) return "agriculture";
+        if (c == 2) return "urban";
+        if (c == 3) return "forest";
+        throw new Exception("Error, unknown land-land use class");
     }
 }

@@ -268,12 +268,12 @@ public class SentinelData {
                             raster2.setSample(i, j, 0, vals[1]);
                             raster3.setSample(i, j, 0, vals[2]);
                         }
-                        Envelope envelope = this.bands.get(0).getEnvelope2D();
-                        GridCoverageFactory factory = CoverageFactoryFinder.getGridCoverageFactory(null);
-                        this.bands.add(factory.create("1", raster1, envelope));
-                        this.bands.add(factory.create("2", raster2, envelope));
-                        this.bands.add(factory.create("2", raster3, envelope));
                     }
+                    Envelope envelope = this.bands.get(0).getEnvelope2D();
+                    GridCoverageFactory factory = CoverageFactoryFinder.getGridCoverageFactory(null);
+                    this.bands.add(factory.create("1", raster1, envelope));
+                    this.bands.add(factory.create("2", raster2, envelope));
+                    this.bands.add(factory.create("2", raster3, envelope));
                 } else {
                     bands.add(openSentinelData(bandFile));
                 }

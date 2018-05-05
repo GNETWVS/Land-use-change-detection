@@ -12,6 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
@@ -61,6 +62,7 @@ public class Controller {
     public Label fbLabel;
     public Label agriLabel;
     public Label roiLabel;
+    public TextArea wktTextArea;
 
     WebEngine webEngine;
 
@@ -201,44 +203,50 @@ public class Controller {
             Task<ChangeDetector> task = new Task<ChangeDetector>() {
                 @Override
                 protected ChangeDetector call() throws Exception {
-                    updateProgress(0, 1);
-                    updateMessage("Opening and parsing of " + beforeSentinelGranuleFile.getName());
-                    SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, resolution);
-                    updateProgress(0.1, 1);
-                    updateMessage("Opening and parsing of " + afterSentinelGranuleFile.getName());
-                    SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution);
-                    updateProgress(0.2, 1);
-                    updateMessage("Bands cropping...");
-                    ChangeDetector detector;
-                    if (roiFile == null) {
-                        detector = new ChangeDetector(firstSentinelData, secondSentinelData);
-                    } else {
-                        DataStore store = Utils.openShapefile(roiFile);
-                        if (store == null || store.getTypeNames() == null || store.getTypeNames().length == 0){
-                            throw new NullPointerException("ROI vector data store is null");
+                    try {
+                        updateProgress(0, 1);
+                        updateMessage("Opening and parsing of " + beforeSentinelGranuleFile.getName());
+                        SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, resolution);
+                        updateProgress(0.1, 1);
+                        updateMessage("Opening and parsing of " + afterSentinelGranuleFile.getName());
+                        SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution);
+                        updateProgress(0.2, 1);
+                        updateMessage("Bands cropping...");
+                        ChangeDetector detector;
+                        if (roiFile == null) {
+                            detector = new ChangeDetector(firstSentinelData, secondSentinelData);
+                        } else {
+                            DataStore store = Utils.openShapefile(roiFile);
+                            if (store == null || store.getTypeNames() == null || store.getTypeNames().length == 0) {
+                                throw new NullPointerException("ROI vector data store is null");
+                            }
+                            String waterTypeName = store.getTypeNames()[0];
+                            detector = new ChangeDetector(firstSentinelData, secondSentinelData,
+                                    Utils.openShapefile(roiFile).getFeatureSource(waterTypeName).getFeatures());
                         }
-                        String waterTypeName = store.getTypeNames()[0];
-                        detector = new ChangeDetector(firstSentinelData, secondSentinelData,
-                                Utils.openShapefile(roiFile).getFeatureSource(waterTypeName).getFeatures());
+                        updateProgress(0.3, 1);
+                        updateMessage("Bands classification and clouds and snow removing...");
+                        detector.certificate();
+                        updateProgress(0.5, 1);
+                        updateMessage("Land-use classification results checking and fixing...");
+                        detector.checkAndFixPixels();
+                        updateProgress(0.6, 1);
+                        updateMessage("Land-use classification vector extraction...");
+                        detector.extractPolygons();
+                        updateProgress(0.7, 1);
+                        updateMessage("Land-use change detection...");
+                        detector.detectLandUseChanges();
+                        updateProgress(0.8, 1);
+                        updateMessage("Land-use change areas calculation...");
+                        detector.calculateLUCDAreas();
+                        updateProgress(0.9, 1);
+                        return detector;
+                    } catch (Exception e) {
+                        Utils.showErrorMessage("Error",
+                                e.getMessage(),
+                                Arrays.toString(e.getStackTrace()));
+                        return null;
                     }
-                    updateProgress(0.3, 1);
-                    updateMessage("Bands classification and clouds and snow removing...");
-                    detector.certificate();
-                    updateProgress(0.5, 1);
-                    updateMessage("Land-use classification results checking and fixing...");
-                    detector.checkAndFixPixels();
-                    updateProgress(0.6, 1);
-                    updateMessage("Land-use classification vector extraction...");
-                    detector.extractPolygons();
-                    updateProgress(0.7, 1);
-                    updateMessage("Land-use change detection...");
-                    detector.detectLandUseChanges();
-                    updateProgress(0.8, 1);
-                    updateMessage("Land-use change areas calculation...");
-                    detector.calculateLUCDAreas();
-                    updateProgress(0.9, 1);
-
-                    return detector;
                 }
             };
             form.activateProgressBar(task);
@@ -335,6 +343,7 @@ public class Controller {
                         }
                     }
                     Utils.writeGeoJSON(this.lucd.getChangeDetection(), "src/resources/AppWebForm/res/result.json");
+                    this.wktTextArea.textProperty().setValue(this.lucd.getWKT());
                     this.webEngine.executeScript("showResult();");
                 } catch (Exception e) {
                     e.printStackTrace();
