@@ -139,8 +139,10 @@ public class Controller {
             Parent root = loader.load();
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setTitle("Learn SVM by NextGIS");
-             stage.setScene(new Scene(root, 450, 450));
+            stage.setTitle("Learn SVM by Open Street Map");
+            stage.setScene(new Scene(root, 600, 400));
+            stage.getIcons().add(new Image("/icon.png"));
+            stage.setResizable(false);
             stage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();

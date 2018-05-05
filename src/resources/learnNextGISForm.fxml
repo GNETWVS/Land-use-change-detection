@@ -13,10 +13,10 @@
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="343.0" prefWidth="570.0">
                 <children>
                     <Label layoutX="26.0" layoutY="18.0" prefHeight="16.0" prefWidth="136.0" text="ESA Sentinel 2 Data" />
-                    <Label layoutX="26.0" layoutY="168.0" text="NextGIS Shapefiles" />
+                    <Label layoutX="26.0" layoutY="168.0" text="OSM Shapefiles" />
                     <Button fx:id="trainingSentinelDataChooser" layoutX="151.0" layoutY="14.0" mnemonicParsing="false" onAction="#selectSentinelTrainingData" text="Open File" />
                     <Button fx:id="selectTrainingVectorButton" disable="true" layoutX="143.0" layoutY="164.0" mnemonicParsing="false" onAction="#selectTrainingVectorFile" text="Open File" />
-                  <Button fx:id="trainButton" layoutX="254.0" layoutY="213.0" mnemonicParsing="false" onAction="#trainSVMModel" text="Learn" />
+                  <Button fx:id="trainButton" defaultButton="true" layoutX="209.0" layoutY="212.0" mnemonicParsing="false" onAction="#trainSVMModel" text="Train" />
                   <Label fx:id="esaDataLabel" layoutX="231.0" layoutY="18.0" text="Data not selected" />
                   <Label fx:id="nextGisVectorFileLabel" layoutX="231.0" layoutY="168.0" text="Data not selected" />
                   <Button fx:id="selectGranuleButton" layoutX="233.0" layoutY="47.0" mnemonicParsing="false" onAction="#selectGranuleButtonHandler" text="Select Granule" />
@@ -24,6 +24,11 @@
                   <Label layoutX="26.0" layoutY="87.0" text="Granule" />
                   <Label layoutX="26.0" layoutY="125.0" text="Resolution" />
                   <ComboBox fx:id="resolutionBox" disable="true" layoutX="100.0" layoutY="121.0" prefWidth="110.0" />
+                  <Button fx:id="exportAButton" layoutX="13.0" layoutY="256.0" mnemonicParsing="false" text="Export SVM A Model" />
+                  <Button fx:id="exportBButton" layoutX="14.0" layoutY="291.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="127.0" text="Export SVM B Model" />
+                  <Button fx:id="cancelButton" cancelButton="true" layoutX="278.0" layoutY="212.0" mnemonicParsing="false" text="Cancel" />
+                  <Button fx:id="importAButton" layoutX="155.0" layoutY="256.0" mnemonicParsing="false" text="Import SVM A Model" />
+                  <Button fx:id="importBButton" layoutX="155.0" layoutY="291.0" mnemonicParsing="false" text="Import SVM B Model" />
                 </children>
             </AnchorPane>
         </content>

@@ -76,8 +76,8 @@ public class Classification implements Serializable {
                     "vineyard",
                     "farm",
                     "allotments",
-                    "farmyard"
-                    //greenhouse_horticulture ??? or urban
+                    "farmyard",
+                    "greenhouse_horticulture"
             )),
             // Urban classes
             // Build up
@@ -89,21 +89,16 @@ public class Classification implements Serializable {
                     "residential",
                     "retail",
                     "school",
-//            )),
-////            // TODO: Infrasturcure
-////            // TODO: Recreation
-////            // Landfill
-//            Collections.unmodifiableList(Arrays.asList(
                     "brownfield",
                     "construction",
-                    "landfill", //(separate?)
+                    "landfill",
                     "quarry",
                     "salt_pond"
             )),
             // Forest class
             Collections.unmodifiableList(Arrays.asList(
                     "forest",
-                    "wood" //logging
+                    "wood"
             ))
     ));
 
@@ -296,6 +291,16 @@ public class Classification implements Serializable {
         serializeSVMObject();
     }
 
+    public void trainByNextGISData(File nextShp, File s2DataFile, ClassificationEnum type) throws Exception {
+        SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
+        GridCoverage2D mask = getNextGISCoverage(nextShp, sData);
+        SVMData svmData = getTrainingAndValidationData(sData, mask);
+        sData = null;
+        trainAndValidateModel(svmData);
+        svmData = null;
+        serializeSVMObject(type);
+    }
+
     private void trainByNextGISData(SentinelData sData, File nextSHP) throws Exception {
         GridCoverage2D mask = getNextGISCoverage(nextSHP, sData);
         SVMData svmData = getTrainingAndValidationData(sData, mask);
@@ -318,8 +323,6 @@ public class Classification implements Serializable {
      * NextGIS shapefile with vegetation (forest, wood)
      */
     private final static String VEGETATION_POLYGON_SHP_NAME = "vegetation-polygon.shp";
-
-    // TODO: railway and highway
 
     /**
      * Resterization of NextGIS data for classes

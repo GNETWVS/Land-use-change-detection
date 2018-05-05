@@ -1,11 +1,14 @@
 package LandUseChangeDetection.forms;
 
 import LandUseChangeDetection.Classification;
+import LandUseChangeDetection.ClassificationEnum;
 import LandUseChangeDetection.SentinelData;
 import LandUseChangeDetection.Utils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -15,6 +18,7 @@ import javafx.stage.FileChooser;
 import org.esa.s2tbx.dataio.VirtualPath;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Observable;
@@ -33,6 +37,11 @@ public class TrainNextGisForm {
     public Button selectTrainingVectorButton;
     public Label nextGisVectorFileLabel;
     public Button trainButton;
+    public Button exportAButton;
+    public Button exportBButton;
+    public Button cancelButton;
+    public Button importAButton;
+    public Button importBButton;
 
     /**
      * Training sentinel file
@@ -94,22 +103,64 @@ public class TrainNextGisForm {
      */
     public void trainSVMModel(ActionEvent actionEvent) {
         if (this.sentinel2ALevelFile == null || this.trainingShapefile == null) {
-
+            Utils.showErrorMessage("Error",
+                    "Please, choose files for training",
+                    "");
             return;
         }
         File granule = new File(granuleSelectionBox.getValue().toString());
-        Classification svm = Classification.getInstance();
-        try {
-            svm.trainByNextGISData(this.trainingShapefile, granule);
-        } catch (Exception e) {
-            e.printStackTrace();
+        ClassificationEnum type;
+        if (sentinel2ALevelFile.getParentFile().getName().startsWith("S2A")) {
+            type = ClassificationEnum.A;
+        } else if (sentinel2ALevelFile.getParentFile().getName().startsWith("S2B")) {
+            type = ClassificationEnum.B;
+        } else {
+            Utils.showErrorMessage("Error",
+                    "Plese select valid Sentinel file",
+                    sentinel2ALevelFile.getParentFile().getName());
+            return;
         }
+        Classification svm = Classification.getInstance(type);
+        Task task = new Task() {
+            @Override
+            protected Object call() {
+                try {
+                    importAButton.setDisable(true);
+                    importBButton.setDisable(true);
+                    exportAButton.setDisable(true);
+                    exportBButton.setDisable(true);
+                    trainButton.setDisable(true);
+                    cancelButton.setDisable(false);
+                    svm.trainByNextGISData(trainingShapefile, granule);
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Success");
+                    alert.setHeaderText("Training process finished successfully");
+                    alert.showAndWait();
+                } catch (Exception e) {
+                    Utils.showErrorMessage("Error",
+                            e.getMessage(),
+                            Arrays.toString(e.getStackTrace()));
+                }
+                return null;
+            }
+        };
+        this.cancelButton.setOnMouseClicked(event -> {
+            task.cancel();
+            cancelButton.setDisable(true);
+            importAButton.setDisable(false);
+            importBButton.setDisable(false);
+            exportAButton.setDisable(false);
+            exportBButton.setDisable(false);
+            trainButton.setDisable(false);
+        });
+
+        new Thread(task).start();
     }
 
     /**
      * Resolutions list
      */
-    private final static ObservableList<String> resolutions = FXCollections.observableArrayList("10m", "20m", "60m");
+    private final static ObservableList<String> resolutions = FXCollections.observableArrayList("60m", "20m");
 
     /**
      * Selection granules handler
