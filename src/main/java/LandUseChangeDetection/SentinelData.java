@@ -47,15 +47,6 @@ import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Sentinel data resolutions
- */
-enum Resolution {
-    R10m,
-    R20m,
-    R60m
-}
-
 public class SentinelData {
 
     static {

@@ -47,12 +47,12 @@ public class Classification implements Serializable {
     /**
      * Path ot serializable object
      */
-    private static final File svmModelPath = new File("src/resources/model.svm");
+    public static final File svmModelPath = new File("src/resources/model.svm");
 
     /**
      * Path ot serializable object
      */
-    private static final File svmBModelPath = new File("src/resources/modelB.svm");
+    public static final File svmBModelPath = new File("src/resources/modelB.svm");
 
     /**
      * SVM A model
@@ -291,8 +291,8 @@ public class Classification implements Serializable {
         serializeSVMObject();
     }
 
-    public void trainByNextGISData(File nextShp, File s2DataFile, ClassificationEnum type) throws Exception {
-        SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
+    public void trainByNextGISData(File nextShp, File s2DataFile, ClassificationEnum type, Resolution resolution) throws Exception {
+        SentinelData sData = new SentinelData(s2DataFile, resolution);
         GridCoverage2D mask = getNextGISCoverage(nextShp, sData);
         SVMData svmData = getTrainingAndValidationData(sData, mask);
         sData = null;

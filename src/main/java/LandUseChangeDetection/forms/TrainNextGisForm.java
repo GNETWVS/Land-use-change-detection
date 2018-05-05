@@ -1,9 +1,6 @@
 package LandUseChangeDetection.forms;
 
-import LandUseChangeDetection.Classification;
-import LandUseChangeDetection.ClassificationEnum;
-import LandUseChangeDetection.SentinelData;
-import LandUseChangeDetection.Utils;
+import LandUseChangeDetection.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -15,9 +12,13 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import org.esa.s2tbx.dataio.VirtualPath;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +43,7 @@ public class TrainNextGisForm {
     public Button cancelButton;
     public Button importAButton;
     public Button importBButton;
+    public Button trainingSentinelDataChooser;
 
     /**
      * Training sentinel file
@@ -120,18 +122,29 @@ public class TrainNextGisForm {
                     sentinel2ALevelFile.getParentFile().getName());
             return;
         }
+        Resolution resolution;
+        if (resolutionBox.getValue().equals("60m")) {
+            resolution = Resolution.R60m;
+        } else {
+            resolution = Resolution.R20m;
+        }
         Classification svm = Classification.getInstance(type);
         Task task = new Task() {
             @Override
             protected Object call() {
                 try {
+                    trainingSentinelDataChooser.setDisable(true);
+                    selectGranuleButton.setDisable(true);
+                    granuleSelectionBox.setDisable(true);
+                    resolutionBox.setDisable(true);
+                    selectTrainingVectorButton.setDisable(true);
                     importAButton.setDisable(true);
                     importBButton.setDisable(true);
                     exportAButton.setDisable(true);
                     exportBButton.setDisable(true);
                     trainButton.setDisable(true);
                     cancelButton.setDisable(false);
-                    svm.trainByNextGISData(trainingShapefile, granule);
+                    svm.trainByNextGISData(trainingShapefile, granule, type, resolution);
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Success");
                     alert.setHeaderText("Training process finished successfully");
@@ -146,6 +159,11 @@ public class TrainNextGisForm {
         };
         this.cancelButton.setOnMouseClicked(event -> {
             task.cancel();
+            trainingSentinelDataChooser.setDisable(false);
+            selectGranuleButton.setDisable(false);
+            granuleSelectionBox.setDisable(false);
+            resolutionBox.setDisable(false);
+            selectTrainingVectorButton.setDisable(false);
             cancelButton.setDisable(true);
             importAButton.setDisable(false);
             importBButton.setDisable(false);
@@ -153,6 +171,8 @@ public class TrainNextGisForm {
             exportBButton.setDisable(false);
             trainButton.setDisable(false);
         });
+
+        ((Stage)learnNextGISForm.getScene().getWindow()).setOnHiding(event -> task.cancel());
 
         new Thread(task).start();
     }
@@ -187,6 +207,80 @@ public class TrainNextGisForm {
             Utils.showErrorMessage("Granules extracting error",
                     "Error, granules extracting ",
                     e.getMessage());
+        }
+    }
+
+    public void exportAHandler(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export SVM A Model");
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("SVM files (*.svm)", "*.svm");
+        fileChooser.setSelectedExtensionFilter(filter);
+        File file = fileChooser.showSaveDialog(learnNextGISForm.getScene().getWindow());
+        if (file != null) {
+            try {
+                Files.copy(Classification.svmModelPath.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                Utils.showErrorMessage("Exporting error",
+                        "Cannot export SVM A Model",
+                        Arrays.toString(e.getStackTrace()));
+            }
+        }
+    }
+
+    public void exportBHandler(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export SVM B Model");
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("SVM files (*.svm)", "*.svm");
+        fileChooser.setSelectedExtensionFilter(filter);
+        File file = fileChooser.showSaveDialog(learnNextGISForm.getScene().getWindow());
+        if (file != null) {
+            try {
+                Files.copy(Classification.svmBModelPath.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                Utils.showErrorMessage("Exporting error",
+                        "Cannot export SVM B Model",
+                        Arrays.toString(e.getStackTrace()));
+            }
+        }
+    }
+
+    public void importAHandler(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import SVM A Model");
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("SVM files (*.svm)", "*.svm");
+        fileChooser.setSelectedExtensionFilter(filter);
+        File file = fileChooser.showOpenDialog(learnNextGISForm.getScene().getWindow());
+        if (file != null) {
+            try {
+                Files.copy(file.toPath(), Classification.svmModelPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Import");
+                alert.setHeaderText("SVM A model imported successfully. Please, restart program for correct work");
+            } catch (IOException e) {
+                Utils.showErrorMessage("Importing error",
+                        "Cannot import SVM A Model",
+                        Arrays.toString(e.getStackTrace()));
+            }
+        }
+    }
+
+    public void importBHandler(ActionEvent actionEvent) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import SVM B Model");
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("SVM files (*.svm)", "*.svm");
+        fileChooser.setSelectedExtensionFilter(filter);
+        File file = fileChooser.showOpenDialog(learnNextGISForm.getScene().getWindow());
+        if (file != null) {
+            try {
+                Files.copy(file.toPath(), Classification.svmBModelPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Import");
+                alert.setHeaderText("SVM B model imported successfully. Please, restart program for correct work");
+            } catch (IOException e) {
+                Utils.showErrorMessage("Exporting error",
+                        "Cannot import SVM B Model",
+                        Arrays.toString(e.getStackTrace()));
+            }
         }
     }
 }

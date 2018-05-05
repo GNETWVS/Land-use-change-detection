@@ -24,11 +24,11 @@
                   <Label layoutX="26.0" layoutY="87.0" text="Granule" />
                   <Label layoutX="26.0" layoutY="125.0" text="Resolution" />
                   <ComboBox fx:id="resolutionBox" disable="true" layoutX="100.0" layoutY="121.0" prefWidth="110.0" />
-                  <Button fx:id="exportAButton" layoutX="13.0" layoutY="256.0" mnemonicParsing="false" text="Export SVM A Model" />
-                  <Button fx:id="exportBButton" layoutX="14.0" layoutY="291.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="127.0" text="Export SVM B Model" />
+                  <Button fx:id="exportAButton" layoutX="13.0" layoutY="256.0" mnemonicParsing="false" onAction="#exportAHandler" text="Export SVM A Model" />
+                  <Button fx:id="exportBButton" layoutX="14.0" layoutY="291.0" mnemonicParsing="false" onAction="#exportBHandler" prefHeight="25.0" prefWidth="127.0" text="Export SVM B Model" />
                   <Button fx:id="cancelButton" cancelButton="true" layoutX="278.0" layoutY="212.0" mnemonicParsing="false" text="Cancel" />
-                  <Button fx:id="importAButton" layoutX="155.0" layoutY="256.0" mnemonicParsing="false" text="Import SVM A Model" />
-                  <Button fx:id="importBButton" layoutX="155.0" layoutY="291.0" mnemonicParsing="false" text="Import SVM B Model" />
+                  <Button fx:id="importAButton" layoutX="155.0" layoutY="256.0" mnemonicParsing="false" onAction="#importAHandler" text="Import SVM A Model" />
+                  <Button fx:id="importBButton" layoutX="155.0" layoutY="291.0" mnemonicParsing="false" onAction="#importBHandler" text="Import SVM B Model" />
                 </children>
             </AnchorPane>
         </content>
