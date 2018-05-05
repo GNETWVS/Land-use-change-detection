@@ -3,7 +3,6 @@ package LandUseChangeDetection.forms;
 import LandUseChangeDetection.Utils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -17,7 +16,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.util.converter.NumberStringConverter;
-import netscape.javascript.JSObject;
 import org.apache.abdera.Abdera;
 import org.apache.abdera.model.Document;
 import org.apache.abdera.model.Entry;
@@ -27,9 +25,6 @@ import org.apache.abdera.protocol.client.AbderaClient;
 import org.apache.abdera.protocol.client.ClientResponse;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.odata4j.consumer.ODataConsumer;
-import org.odata4j.consumer.ODataConsumers;
-import org.odata4j.consumer.behaviors.BasicAuthenticationBehavior;
 
 import java.awt.*;
 import java.io.File;
@@ -38,14 +33,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 
 public class SearchAndDownloadForm {
@@ -67,11 +59,6 @@ public class SearchAndDownloadForm {
 
     public PasswordField passwordTextField;
     public TextField loginTextField;
-
-    /**
-     * OData consumer builder
-     */
-    private static ODataConsumer.Builder consumerBuilder = ODataConsumers.newBuilder(esaOpenHubURL);
     public DatePicker sensingStartDate;
     public DatePicker sensingFinishDate;
     public TextField maxCloudPercentage;
@@ -81,37 +68,27 @@ public class SearchAndDownloadForm {
     public Button loginButton;
     public ListView resultListView;
     public TabPane tab;
+    public Button searchButton;
 
     /**
      * Open search client
      */
     private AbderaClient abderaClient;
 
-    /**
-     * OData consumer
-     */
-    private ODataConsumer consumer;
-
-    /**
-     * Geometry JS Leaflet string
-     */
-    private String geometryJS;
 
     public void changeLogin(ActionEvent actionEvent) {
         this.loginTextField.setDisable(false);
         this.passwordTextField.setDisable(false);
         this.loginButton.setDisable(false);
         this.changeButton.setDisable(true);
+        this.sensingStartDate.setDisable(true);
+        this.sensingFinishDate.setDisable(true);
+        this.maxCloudPercentage.setDisable(true);
+        this.searchButton.setDisable(true);
     }
 
-    /**
-     * JS connector
-     */
-    public class DownloadAndSearchApplication {
-        public void callFromJavascript(String geom) {
-            geometryJS = geom;
-        }
-    }
+
+    private WebEngine webEngine;
 
     /**
      * Download form initialization
@@ -119,15 +96,12 @@ public class SearchAndDownloadForm {
     @FXML
     void initialize(){
         maxCloudPercentage.setTextFormatter(new TextFormatter<>(new NumberStringConverter()));
+        maxCloudPercentage.setText("100");
         WebEngine webEngine = webMap.getEngine();
         File mapIndexFile = new File("src/resources/SaDWebForm/index.html");
         webEngine.load("file:" + mapIndexFile.getAbsolutePath());
-        webEngine.getLoadWorker().stateProperty().addListener((ov, oldState, newState) -> {
-            if (newState == Worker.State.SUCCEEDED) {
-                JSObject window = (JSObject) webEngine.executeScript("window");
-                window.setMember("app", new DownloadAndSearchApplication());
-            }
-        });
+        this.webEngine = webEngine;
+        this.webEngine.setJavaScriptEnabled(true);
     }
 
     /**
@@ -167,11 +141,12 @@ public class SearchAndDownloadForm {
                 AuthScope.ANY_SCHEME,
                 new UsernamePasswordCredentials(login, password)
         );
-        // Create OData consumer
-        consumerBuilder.setClientBehaviors(new BasicAuthenticationBehavior(login, password));
-        this.consumer = consumerBuilder.build();
         this.loginButton.setDisable(true);
         this.changeButton.setDisable(false);
+        this.sensingStartDate.setDisable(false);
+        this.sensingFinishDate.setDisable(false);
+        this.maxCloudPercentage.setDisable(false);
+        this.searchButton.setDisable(false);
     }
 
 
@@ -220,9 +195,10 @@ public class SearchAndDownloadForm {
                     .append("%5D");
         }
         // Coverage intersection
-        if (this.geometryJS != null) {
+        String geometry = (String) this.webEngine.executeScript("getGeometry();");
+        if (geometry != null && !geometry.equals("") && !geometry.equals("undefined")) {
             queryBuilder.append("%20AND%20footprint%3A%22Intersects%28")
-                    .append(geometryJS
+                    .append(geometry
                             .replace(" ", "%20")
                             .replace(",", "%2C")
                             .replace("(", "%28")
@@ -235,7 +211,7 @@ public class SearchAndDownloadForm {
             queryBuilder.append("%20AND%20cloudcoverpercentage%3A%5B0%20TO%20").append(maxCloudsPercentage).append("%5D");
         }
         // Create open search query
-        System.out.println(OPEN_SEARCH_QUERY_BASE + queryBuilder.toString());
+        System.out.println(geometry);
         ClientResponse response = this.abderaClient.get(OPEN_SEARCH_QUERY_BASE + queryBuilder.toString());
         List<Entry> entries = null;
         if (response.getType() == Response.ResponseType.SUCCESS) {

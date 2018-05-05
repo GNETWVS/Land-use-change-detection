@@ -1,9 +1,7 @@
 package LandUseChangeDetection;
 
-import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
-import org.apache.commons.lang.ArrayUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
 import org.geotools.data.DataStore;
@@ -14,7 +12,6 @@ import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.filter.ConstantExpression;
-import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.process.vector.VectorToRasterProcess;
@@ -43,17 +40,27 @@ public class Classification implements Serializable {
     private static Classification instance;
 
     /**
+     * Classification B singleton instance
+     */
+    private static Classification instanceB;
+
+    /**
      * Path ot serializable object
      */
     private static final File svmModelPath = new File("src/resources/model.svm");
 
     /**
-     * SVM model
+     * Path ot serializable object
+     */
+    private static final File svmBModelPath = new File("src/resources/modelB.svm");
+
+    /**
+     * SVM A model
      */
     private SVM<double[]> svm;
 
     /**
-     *
+     * Classes
      */
     private static final List<List<String>> LAND_USE_CLASSES = Collections.unmodifiableList(Arrays.asList(
             // Water class
@@ -100,6 +107,10 @@ public class Classification implements Serializable {
             ))
     ));
 
+    /**
+     * Private constructor
+     * @param svm model
+     */
     private Classification(SVM<double[]> svm) {
         this.svm = svm;
     }
@@ -120,6 +131,21 @@ public class Classification implements Serializable {
         return instance;
     }
 
+    public static Classification getInstance(ClassificationEnum type) {
+        if (type == ClassificationEnum.A) {
+            return getInstance();
+        }
+        if (instanceB == null) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(svmBModelPath))) {
+                SVM<double[]>svm = (SVM<double[]>) ois.readObject();
+                instanceB = new Classification(svm);
+            } catch (ClassNotFoundException | IOException e) {
+                instanceB = new Classification(null);
+            }
+        }
+        return instanceB;
+    }
+
     /**
      * Serialize trained SVM model
      */
@@ -129,7 +155,22 @@ public class Classification implements Serializable {
         }
     }
 
-    public int predict(double[] vector) {
+    /**
+     * Serialize trained SVM model
+     */
+    private void serializeSVMObject(ClassificationEnum type) throws IOException {
+        if (type == ClassificationEnum.A) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(svmModelPath))) {
+                oos.writeObject(this.svm);
+            }
+            return;
+        }
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(svmBModelPath))) {
+            oos.writeObject(this.svm);
+        }
+    }
+
+    int predict(double[] vector) {
         return this.svm.predict(vector);
     }
 
@@ -237,14 +278,6 @@ public class Classification implements Serializable {
     private void learn(double[][] data, int[] label) {
         svm.learn(data, label);
         svm.finish();
-    }
-
-    void getOSMTrainingSamples(File osmShp) throws IOException {
-        DataStore shpDataStore = Utils.openShapefile(osmShp);
-        for (List<String> classTags : LAND_USE_CLASSES) {
-            // TODO: Extract features
-            // TODO: Raster mask
-        }
     }
 
     /**
