@@ -253,30 +253,7 @@ public class SentinelData {
         bands = new ArrayList<>(files.length);
         for (File bandFile : files) {
             if (FilenameUtils.getExtension(bandFile.getName()).equals(JP2K_EXTENSION)) {
-                if (bandFile.getName().contains("TCI") || bandFile.getName().contains("AOT")) {
-                    continue;
-//                    GridCoverage2D band = openSentinelData(bandFile);
-//                    Raster bandRaster = band.getRenderedImage().getData();
-//                    int width = bandRaster.getWidth();
-//                    int height = bandRaster.getHeight();
-//                    WritableRaster raster1 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
-//                    WritableRaster raster2 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
-//                    WritableRaster raster3 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
-//                    for (int i = 0; i < width; ++i) {
-//                        for (int j = 0; j < height; ++j) {
-//                            float[] vals = new float[3];
-//                            band.evaluate(new GridCoordinates2D(i, j), vals);
-//                            raster1.setSample(i, j, 0, vals[0]);
-//                            raster2.setSample(i, j, 0, vals[1]);
-//                            raster3.setSample(i, j, 0, vals[2]);
-//                        }
-//                    }
-//                    Envelope envelope = this.bands.get(0).getEnvelope2D();
-//                    GridCoverageFactory factory = CoverageFactoryFinder.getGridCoverageFactory(null);
-//                    this.bands.add(factory.create("1", raster1, envelope));
-//                    this.bands.add(factory.create("2", raster2, envelope));
-//                    this.bands.add(factory.create("2", raster3, envelope));
-                } else {
+                if (!bandFile.getName().contains("TCI") && !bandFile.getName().contains("AOT")) {
                     bands.add(openSentinelData(bandFile));
                 }
             }

@@ -1,6 +1,5 @@
 package LandUseChangeDetection;
 
-import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -118,7 +117,7 @@ public class Classification implements Serializable {
     public static Classification getInstance() {
         if (instance == null) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(svmModelPath))) {
-                SVM<double[]>svm = (SVM<double[]>) ois.readObject(); // TODO: Рабобраться с ошибкой
+                SVM<double[]>svm = (SVM<double[]>) ois.readObject();
                 instance = new Classification(svm);
             } catch (ClassNotFoundException | IOException e) {
                 instance = new Classification(null);
@@ -142,14 +141,14 @@ public class Classification implements Serializable {
         return instanceB;
     }
 
-    /**
-     * Serialize trained SVM model
-     */
-    private void serializeSVMObject() throws IOException {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(svmModelPath))) {
-            oos.writeObject(this.svm);
-        }
-    }
+//    /**
+//     * Serialize trained SVM model
+//     */
+//    private void serializeSVMObject() throws IOException {
+//        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(svmModelPath))) {
+//            oos.writeObject(this.svm);
+//        }
+//    }
 
     /**
      * Serialize trained SVM model
@@ -232,7 +231,7 @@ public class Classification implements Serializable {
                 for (int i = 0; i < accuracies.length; ++i) {
                     accuracies[i] /= sets.length;
                 }
-                writer.write("S = " + s + "; C = " + c + "; accuracy = " + accuracy + " " + Arrays.toString(accuracies));
+                System.out.println("S = " + s + "; C = " + c + "; accuracy = " + accuracy + " " + Arrays.toString(accuracies));
                 if (accuracy > totalAccuracy) {
                     totalAccuracy = accuracy;
                     classAccuracies = accuracies;
@@ -240,9 +239,8 @@ public class Classification implements Serializable {
                     selectedC = c;
                     selectedS = s;
                 }
-                writer.write("RES: S = " + selectedS + "; C" + selectedC + "; ac = " + totalAccuracy + " " + Arrays.toString(classAccuracies) + "\n");
-                writer.newLine();
-                writer.flush();
+                System.out.println("RES: S = " + selectedS + "; C" + selectedC + "; ac = " + totalAccuracy + " " + Arrays.toString(classAccuracies) + "\n");
+                System.out.println();
             }
         }
         System.out.println("c = " + selectedC + "; s" + selectedS + "; ac = " + totalAccuracy + " c: " + Arrays.toString(classAccuracies));
@@ -266,9 +264,9 @@ public class Classification implements Serializable {
             count += val;
         }
         double currentAccuracy = (double) count / predictions.length;
-        writer.write("" + currentAccuracy);
+        System.out.println(currentAccuracy);
         this.svm = selectedSVM;
-        writer.newLine();
+        System.out.println();
     }
 
     private void learn(double[][] data, int[] label) {
@@ -276,21 +274,21 @@ public class Classification implements Serializable {
         svm.finish();
     }
 
-    /**
-     * Train svm model by NextGIS shapefiles
-     * @param nextShp
-     * @param s2DataFile
-     * @throws Exception
-     */
-    public void trainByNextGISData(File nextShp, File s2DataFile) throws Exception {
-        SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
-        GridCoverage2D mask = getNextGISCoverage(nextShp, sData);
-        SVMData svmData = getTrainingAndValidationData(sData, mask);
-        sData = null;
-        trainAndValidateModel(svmData);
-        svmData = null;
-        serializeSVMObject();
-    }
+//    /**
+//     * Train svm model by NextGIS shapefiles
+//     * @param nextShp
+//     * @param s2DataFile
+//     * @throws Exception
+//     */
+//    public void trainByNextGISData(File nextShp, File s2DataFile) throws Exception {
+//        SentinelData sData = new SentinelData(s2DataFile, Resolution.R60m);
+//        GridCoverage2D mask = getNextGISCoverage(nextShp, sData);
+//        SVMData svmData = getTrainingAndValidationData(sData, mask);
+//        sData = null;
+//        trainAndValidateModel(svmData);
+//        svmData = null;
+//        serializeSVMObject();
+//    }
 
     public void trainByNextGISData(File nextShp, File s2DataFile, ClassificationEnum type, Resolution resolution) throws Exception {
         SentinelData sData = new SentinelData(s2DataFile, resolution);
@@ -302,13 +300,13 @@ public class Classification implements Serializable {
         serializeSVMObject(type);
     }
 
-    private void trainByNextGISData(SentinelData sData, File nextSHP) throws Exception {
-        GridCoverage2D mask = getNextGISCoverage(nextSHP, sData);
-        SVMData svmData = getTrainingAndValidationData(sData, mask);
-        sData = null;
-        trainAndValidateModel(svmData);
-        svmData = null;
-    }
+//    private void trainByNextGISData(SentinelData sData, File nextSHP) throws Exception {
+//        GridCoverage2D mask = getNextGISCoverage(nextSHP, sData);
+//        SVMData svmData = getTrainingAndValidationData(sData, mask);
+//        sData = null;
+//        trainAndValidateModel(svmData);
+//        svmData = null;
+//    }
 
     /**
      * NextGIS shapefile with water features
@@ -597,45 +595,45 @@ public class Classification implements Serializable {
         }
     }
 
-    static File result = new File("C:\\Users\\lukin\\Desktop\\res.txt");
-    static BufferedWriter writer;
-
-//    static {
-//        try {
-//            writer = new BufferedWriter(new FileWriter(result));
-//        } catch (IOException e) {
-//            e.printStackTrace();
+//    static File result = new File("C:\\Users\\lukin\\Desktop\\res.txt");
+//    static BufferedWriter writer;
+//
+////    static {
+////        try {
+////            writer = new BufferedWriter(new FileWriter(result));
+////        } catch (IOException e) {
+////            e.printStackTrace();
+////        }
+////    }
+//
+//    static void findBestBandsSet(File nextShp, File s2DataFile) throws Exception {
+//        SentinelData data = new SentinelData(s2DataFile, Resolution.R60m);
+//        List<GridCoverage2D> bands = data.getBands();
+//        List<List<Integer>> sets = new ArrayList<>();
+//        for (int i = 0; i < (1 << bands.size()); ++i) {
+//            sets.add(new ArrayList<>());
+//            for (int j = 0; j < bands.size(); ++j) {
+//                if ((i & (1 << j)) != 0) {
+//                    sets.get(i).add(j);
+//                }
+//            }
 //        }
+//        sets = Lists.reverse(sets);
+//        for (List<Integer> list : sets) {
+//            if (list.size() < 10) {
+//                continue;
+//            }
+//            List<GridCoverage2D> currentBands = new ArrayList<>();
+//            for (Integer i : list) {
+//                currentBands.add(bands.get(i));
+//            }
+//            data.setBands(currentBands);
+//            writer.write(Arrays.toString(list.toArray()));
+//            writer.newLine();
+//            writer.flush();
+//            Classification classification = new Classification(null);
+//            classification.trainByNextGISData(data, nextShp);
+//        }
+//        writer.close();
 //    }
-
-    static void findBestBandsSet(File nextShp, File s2DataFile) throws Exception {
-        SentinelData data = new SentinelData(s2DataFile, Resolution.R60m);
-        List<GridCoverage2D> bands = data.getBands();
-        List<List<Integer>> sets = new ArrayList<>();
-        for (int i = 0; i < (1 << bands.size()); ++i) {
-            sets.add(new ArrayList<>());
-            for (int j = 0; j < bands.size(); ++j) {
-                if ((i & (1 << j)) != 0) {
-                    sets.get(i).add(j);
-                }
-            }
-        }
-        sets = Lists.reverse(sets);
-        for (List<Integer> list : sets) {
-            if (list.size() < 10) {
-                continue;
-            }
-            List<GridCoverage2D> currentBands = new ArrayList<>();
-            for (Integer i : list) {
-                currentBands.add(bands.get(i));
-            }
-            data.setBands(currentBands);
-            writer.write(Arrays.toString(list.toArray()));
-            writer.newLine();
-            writer.flush();
-            Classification classification = new Classification(null);
-            classification.trainByNextGISData(data, nextShp);
-        }
-        writer.close();
-    }
 }
