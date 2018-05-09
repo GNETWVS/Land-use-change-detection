@@ -92,7 +92,7 @@ class ChangeDetector {
 
     private void cropScenes() throws Exception {
         if (beforeSentinelData == null || afterSentinelData == null) {
-            return;
+            throw new Exception("Error, data is null");
         }
         beforeSentinelData.cropBands(afterSentinelData.getEnvelope());
         afterSentinelData.cropBands(beforeSentinelData.getEnvelope());

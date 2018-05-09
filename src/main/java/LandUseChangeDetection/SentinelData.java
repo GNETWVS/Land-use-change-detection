@@ -40,10 +40,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -151,7 +149,7 @@ public class SentinelData {
      * @param pixel pixel number
      * @return Data vector
      */
-    public double[] getPixelVector(int pixel) {
+    double[] getPixelVector(int pixel) {
         // Lazy initialization
         if (pixels == null) {
             pixels = new double[bands.size()][];
@@ -160,6 +158,9 @@ public class SentinelData {
                 pixels[i] = new double[this.getWidth() * this.getHeight()];
                 band.getPixels(band.getMinX(), band.getMinY(), this.getWidth(), this.getHeight(), pixels[i]);
             }
+        }
+        if (this.pixels[0][0] == 0) {
+            return null;
         }
         double[] vector = new double[bands.size()];
         for (int i = 0; i < vector.length; i++) {
@@ -253,27 +254,28 @@ public class SentinelData {
         for (File bandFile : files) {
             if (FilenameUtils.getExtension(bandFile.getName()).equals(JP2K_EXTENSION)) {
                 if (bandFile.getName().contains("TCL")) {
-                    GridCoverage2D band = openSentinelData(bandFile);
-                    Raster bandRaster = band.getRenderedImage().getData();
-                    int width = bandRaster.getWidth();
-                    int height = bandRaster.getHeight();
-                    WritableRaster raster1 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
-                    WritableRaster raster2 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
-                    WritableRaster raster3 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
-                    for (int i = 0; i < width; ++i) {
-                        for (int j = 0; j < height; ++j) {
-                            float[] vals = new float[3];
-                            band.evaluate(new GridCoordinates2D(i, j), vals);
-                            raster1.setSample(i, j, 0, vals[0]);
-                            raster2.setSample(i, j, 0, vals[1]);
-                            raster3.setSample(i, j, 0, vals[2]);
-                        }
-                    }
-                    Envelope envelope = this.bands.get(0).getEnvelope2D();
-                    GridCoverageFactory factory = CoverageFactoryFinder.getGridCoverageFactory(null);
-                    this.bands.add(factory.create("1", raster1, envelope));
-                    this.bands.add(factory.create("2", raster2, envelope));
-                    this.bands.add(factory.create("2", raster3, envelope));
+                    continue;
+//                    GridCoverage2D band = openSentinelData(bandFile);
+//                    Raster bandRaster = band.getRenderedImage().getData();
+//                    int width = bandRaster.getWidth();
+//                    int height = bandRaster.getHeight();
+//                    WritableRaster raster1 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
+//                    WritableRaster raster2 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
+//                    WritableRaster raster3 = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT, width, height, 1, null);
+//                    for (int i = 0; i < width; ++i) {
+//                        for (int j = 0; j < height; ++j) {
+//                            float[] vals = new float[3];
+//                            band.evaluate(new GridCoordinates2D(i, j), vals);
+//                            raster1.setSample(i, j, 0, vals[0]);
+//                            raster2.setSample(i, j, 0, vals[1]);
+//                            raster3.setSample(i, j, 0, vals[2]);
+//                        }
+//                    }
+//                    Envelope envelope = this.bands.get(0).getEnvelope2D();
+//                    GridCoverageFactory factory = CoverageFactoryFinder.getGridCoverageFactory(null);
+//                    this.bands.add(factory.create("1", raster1, envelope));
+//                    this.bands.add(factory.create("2", raster2, envelope));
+//                    this.bands.add(factory.create("2", raster3, envelope));
                 } else {
                     bands.add(openSentinelData(bandFile));
                 }

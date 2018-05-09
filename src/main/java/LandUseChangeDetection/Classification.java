@@ -1,5 +1,6 @@
 package LandUseChangeDetection;
 
+import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import org.geotools.coverage.grid.GridCoverage2D;
@@ -509,6 +510,7 @@ public class Classification implements Serializable {
             int c = (int)maskPixels[i];
             if (availablePixels[i] == 0.0F && c > 0 && c <= Math.pow(2, LAND_USE_CLASSES.size())) {
                 double[] vector = sentinelData.getPixelVector(i);
+                if (vector == null) continue;
                 for (int j = 0; j < LAND_USE_CLASSES.size(); ++j) {
                     if (Math.pow(2, j) == c) {
                         svmData.add(new SVMVector(vector, j));
@@ -618,9 +620,9 @@ public class Classification implements Serializable {
                 }
             }
         }
-        //sets = Lists.reverse(sets);
+        sets = Lists.reverse(sets);
         for (List<Integer> list : sets) {
-            if (list.size() < 2) {
+            if (list.size() < 10) {
                 continue;
             }
             List<GridCoverage2D> currentBands = new ArrayList<>();
