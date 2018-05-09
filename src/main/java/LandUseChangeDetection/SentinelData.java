@@ -39,6 +39,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -241,9 +243,22 @@ public class SentinelData {
         fileBuilder.append(File.separator);
         fileBuilder.append("IMG_DATA");
         fileBuilder.append(File.separator);
+        File imgDataFile = new File(fileBuilder.toString());
         fileBuilder.append(r);
         fileBuilder.append(File.separator);
         File file = new File(fileBuilder.toString());
+        // Checking for old scl data
+        File[] imgDataDirFiles = imgDataFile.listFiles();
+        if (imgDataDirFiles != null && imgDataDirFiles.length > 1) {
+            for (File f : imgDataDirFiles) {
+                if (f.getName().contains("SCL")) {
+                    File target = new File(file.getAbsolutePath() + File.separator + f.getName());
+                    if (!target.exists()) {
+                        Files.copy(f.toPath(), target.toPath());
+                    }
+                }
+            }
+        }
         File[] files = file.listFiles();
         if (files == null) {
             throw new NullPointerException("Error, incorrect SL2 Data");

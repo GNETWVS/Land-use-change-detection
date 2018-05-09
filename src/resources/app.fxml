@@ -75,25 +75,25 @@
                   <Label layoutX="63.0" layoutY="354.0" text="Build up" />
                   <Label layoutX="63.0" layoutY="375.0" text="Forest" />
                   <Label layoutX="63.0" layoutY="396.0" text="W to A" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#f80000" height="18.0" layoutX="12.0" layoutY="416.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#bee7ff" height="18.0" layoutX="12.0" layoutY="416.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
                   <Label layoutX="62.0" layoutY="417.0" text="W to B" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ffe100" height="18.0" layoutX="12.0" layoutY="437.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#7f4e33" height="18.0" layoutX="12.0" layoutY="437.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
                   <Label layoutX="63.0" layoutY="438.0" text="W to F" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#f58b00" height="18.0" layoutX="12.0" layoutY="458.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ff00e1" height="18.0" layoutX="12.0" layoutY="479.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#00f8be" height="18.0" layoutX="12.0" layoutY="500.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#593f22" height="18.0" layoutX="12.0" layoutY="521.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#b930ff" height="18.0" layoutX="12.0" layoutY="542.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#0f1680" height="18.0" layoutX="12.0" layoutY="563.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#00f4dd" height="18.0" layoutX="12.0" layoutY="458.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#f40000" height="18.0" layoutX="12.0" layoutY="479.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#6e0793" height="18.0" layoutX="12.0" layoutY="500.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#0f2b90" height="18.0" layoutX="12.0" layoutY="521.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#a4ff09" height="18.0" layoutX="12.0" layoutY="542.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ff8e00" height="18.0" layoutX="12.0" layoutY="563.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
                   <Label layoutX="63.0" layoutY="459.0" text="A to W" />
                   <Label layoutX="63.0" layoutY="480.0" text="A to B" />
                   <Label layoutX="63.0" layoutY="501.0" text="A to F" />
                   <Label layoutX="63.0" layoutY="522.0" text="B to W" />
                   <Label layoutX="63.0" layoutY="543.0" text="B to A" />
                   <Label layoutX="63.0" layoutY="564.0" text="B to F" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#e89c9c" height="18.0" layoutX="12.0" layoutY="584.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#712bc2" height="18.0" layoutX="12.0" layoutY="584.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
                   <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#2b9722" height="18.0" layoutX="12.0" layoutY="604.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
-                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#221fff" height="18.0" layoutX="12.0" layoutY="624.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
+                  <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ff00e9" height="18.0" layoutX="12.0" layoutY="624.0" stroke="BLACK" strokeType="INSIDE" width="41.0" />
                   <Label layoutX="63.0" layoutY="585.0" text="F to W" />
                   <Label layoutX="63.0" layoutY="605.0" text="F to A" />
                   <Label layoutX="63.0" layoutY="625.0" text="F to B" />
