@@ -253,7 +253,7 @@ public class SentinelData {
         bands = new ArrayList<>(files.length);
         for (File bandFile : files) {
             if (FilenameUtils.getExtension(bandFile.getName()).equals(JP2K_EXTENSION)) {
-                if (bandFile.getName().contains("TCL")) {
+                if (bandFile.getName().contains("TCI") || bandFile.getName().contains("AOT")) {
                     continue;
 //                    GridCoverage2D band = openSentinelData(bandFile);
 //                    Raster bandRaster = band.getRenderedImage().getData();
