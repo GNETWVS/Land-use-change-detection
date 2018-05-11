@@ -256,6 +256,7 @@ public class TrainNextGisForm {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Import");
                 alert.setHeaderText("SVM A model imported successfully. Please, restart program for correct work");
+                alert.showAndWait();
             } catch (IOException e) {
                 Utils.showErrorMessage("Importing error",
                         "Cannot import SVM A Model",
@@ -276,6 +277,7 @@ public class TrainNextGisForm {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Import");
                 alert.setHeaderText("SVM B model imported successfully. Please, restart program for correct work");
+                alert.showAndWait();
             } catch (IOException e) {
                 Utils.showErrorMessage("Exporting error",
                         "Cannot import SVM B Model",

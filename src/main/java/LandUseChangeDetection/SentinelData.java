@@ -471,9 +471,6 @@ public class SentinelData {
         if (this.cloudAndSnowMask == null) {
             GridCoverage2D cloudsMask = openSentinelData(cloudsMaskFile);
             GridCoverage2D snowMask = openSentinelData(snowMaskFile);
-            if (resolution == Resolution.R10m) {
-                // TODO: Interpolar
-            }
             // JAI operations
             ParameterBlock maskOp = new ParameterBlock();
             maskOp.addSource(cloudsMask.getRenderedImage());

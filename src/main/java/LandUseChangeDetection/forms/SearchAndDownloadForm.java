@@ -70,6 +70,7 @@ public class SearchAndDownloadForm {
     public ListView resultListView;
     public TabPane tab;
     public Button searchButton;
+    public Hyperlink signInLink;
 
     /**
      * Open search client
@@ -117,6 +118,15 @@ public class SearchAndDownloadForm {
         webEngine.load("file:" + mapIndexFile.getAbsolutePath());
         this.webEngine = webEngine;
         this.webEngine.setJavaScriptEnabled(true);
+        this.signInLink.setOnAction(e -> {
+            if (Desktop.isDesktopSupported()){
+                try {
+                    Desktop.getDesktop().browse(new URI("https://scihub.copernicus.eu/dhus/#/self-registration"));
+                } catch (IOException | URISyntaxException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });;
     }
 
     /**
