@@ -1,40 +1,37 @@
 package LandUseChangeDetection;
 
 import LandUseChangeDetection.data.Data;
-import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.MultiPolygon;
+import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.simplify.TopologyPreservingSimplifier;
-import javafx.concurrent.Task;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
-import org.geotools.data.DefaultTransaction;
-import org.geotools.data.Transaction;
-import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.data.simple.SimpleFeatureSource;
-import org.geotools.data.simple.SimpleFeatureStore;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.process.raster.PolygonExtractionProcess;
-import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.crs.CRSFactory;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import javax.media.jai.RasterFactory;
+import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.IntStream;
 
 class ChangeDetector {
@@ -98,6 +95,8 @@ class ChangeDetector {
         afterSentinelData.cropBands(beforeSentinelData.getEnvelope());
     }
 
+    private Geometry roi;
+
     private void cropByROI(SimpleFeatureCollection collection) throws Exception {
         if (beforeSentinelData == null || afterSentinelData == null || collection == null) {
             return;
@@ -119,43 +118,51 @@ class ChangeDetector {
                 union = union.union(geometry);
             }
         }
-
+        this.roi = union;
         beforeSentinelData.cropBands(union);
-        beforeSentinelData.cropBands(union);
+        afterSentinelData.cropBands(union);
     }
 
-    private float[][] beforeClassificationMatrix;
-    private float[][] afterClassificationMatrix;
+    private Float[][] beforeClassificationMatrix;
+    private Float[][] afterClassificationMatrix;
 
     void certificate() throws Exception {
         if (beforeSentinelData.getHeight() != afterSentinelData.getHeight()
                 || beforeSentinelData.getWidth() != afterSentinelData.getWidth()) {
             throw new Exception("Error, classification bands with different sizes");
         }
-        Classification svm = Classification.getInstance();
+        Classification beforeSVM = Classification.getInstance(beforeSentinelData.getType());
+        Classification afterSVM = Classification.getInstance(afterSentinelData.getType());
         Raster beforeMask = beforeSentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
         Raster afterMask = afterSentinelData.getCloudsAndSnowMask().getRenderedImage().getData();
         int[] beforeMaskPixels = new int[beforeMask.getWidth() * beforeMask.getHeight()];
         beforeMask.getPixels(beforeMask.getMinX(), beforeMask.getMinY(), beforeMask.getWidth(), beforeMask.getHeight(), beforeMaskPixels);
         int[] afterMaskPixels = new int[afterMask.getWidth() * afterMask.getHeight()];
         afterMask.getPixels(afterMask.getMinX(), afterMask.getMinY(), afterMask.getWidth(), afterMask.getHeight(), afterMaskPixels);
-        beforeClassificationMatrix = new float[beforeSentinelData.getWidth()][beforeSentinelData.getHeight()];
-        afterClassificationMatrix = new float[afterSentinelData.getWidth()][afterSentinelData.getHeight()];
+        beforeClassificationMatrix = new Float[beforeSentinelData.getWidth()][beforeSentinelData.getHeight()];
+        afterClassificationMatrix = new Float[afterSentinelData.getWidth()][afterSentinelData.getHeight()];
         beforeSentinelData.getPixelVector(0);
         afterSentinelData.getPixelVector(0);
         int width = beforeSentinelData.getWidth();
         int height = beforeSentinelData.getHeight();
-        IntStream.range(0, width - 1).parallel().forEach(x ->
-            IntStream.range(0, height - 1).parallel().forEach(y -> {
-//                System.out.println(x + " " + y);
-                int i = x * height + y;
-                if (beforeMaskPixels[i] != 1 && beforeMaskPixels[i] != -9999.0
-                        && afterMaskPixels[i] != 1 && afterMaskPixels[i] != -9999.0) {
-                    beforeClassificationMatrix[x][y] = svm.predict(beforeSentinelData.getPixelVector(i));
-                    afterClassificationMatrix[x][y] = svm.predict(afterSentinelData.getPixelVector(i));
+        IntStream.range(0, width).parallel().forEach(x ->
+            IntStream.range(0, height).parallel().forEach(y -> {
+                int i = y * width + x;
+                System.out.println(i);
+                if (beforeMaskPixels[i] != 1 && beforeMaskPixels[i] != -9999 && beforeMaskPixels[i] != Float.NaN
+                        && afterMaskPixels[i] != 1 && afterMaskPixels[i] != -9999 && afterMaskPixels[i] != Float.NaN) {
+                    double[] bPixels = beforeSentinelData.getPixelVector(i);
+                    double[] aPixels = afterSentinelData.getPixelVector(i);
+                    if (bPixels != null && aPixels != null) {
+                        beforeClassificationMatrix[x][y] = new Float(beforeSVM.predict(bPixels));
+                        afterClassificationMatrix[x][y] = new Float(afterSVM.predict(aPixels));
+                    } else {
+                        beforeClassificationMatrix[x][y] = Float.NaN;
+                        afterClassificationMatrix[x][y] = Float.NaN;
+                    }
                 } else {
-                    beforeClassificationMatrix[x][y] = -1;
-                    afterClassificationMatrix[x][y] = -1;
+                    beforeClassificationMatrix[x][y] = Float.NaN;
+                    afterClassificationMatrix[x][y] = Float.NaN;
                 }
             })
         );
@@ -167,18 +174,44 @@ class ChangeDetector {
         checkPixels(afterClassificationMatrix);
     }
 
-    void extractPolygons() {
-        // Create classification raster
+    void extractPolygons() throws IOException {
         GridCoverageFactory factory = new GridCoverageFactory();
-        GridCoverage2D beforeClassesGrid = factory.create("Before classes", beforeClassificationMatrix, beforeSentinelData.getEnvelope());
-        GridCoverage2D afterClassesGrid = factory.create("After classes", afterClassificationMatrix, afterSentinelData.getEnvelope());
+        WritableRaster before = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT,
+                beforeSentinelData.getWidth(), beforeSentinelData.getHeight(), 1, null);
+        for (int i = 0; i < beforeClassificationMatrix.length; ++i) {
+            Float[] row = beforeClassificationMatrix[i];
+            for (int j = 0; j < row.length; ++j) {
+                before.setSample(i, j, 0, row[j]);
+            }
+        }
+        WritableRaster after = RasterFactory.createBandedRaster(DataBuffer.TYPE_FLOAT,
+                afterSentinelData.getWidth(), afterSentinelData.getHeight(), 1, null);
+        for (int i = 0; i < afterClassificationMatrix.length; ++i) {
+            Float[] row = afterClassificationMatrix[i];
+            for (int j = 0; j < row.length; ++j) {
+                after.setSample(i, j, 0, row[j]);
+            }
+        }
+//
+//        Map<String, Object> properties = new HashMap<String, Object>();
+//        NoDataContainer container = new NoDataContainer(-9999);
+//        CoverageUtilities.setNoDataProperty(properties, container);
+//        // Setting NoData as property
+//        CoverageUtilities.setNoDataProperty(properties, container);
+//        ROI roi = new ROIGeometry(this.roi);
+//        CoverageUtilities.setROIProperty(properties, roi);
+        GridCoverage2D beforeClassesGrid = factory.create("Before classes", before, beforeSentinelData.getEnvelope());
+        GridCoverage2D afterClassesGrid = factory.create("After classes", after, afterSentinelData.getEnvelope());
+        File file = new File("C:\\Users\\Arthur\\Desktop\\Java\\99.tiff");
+            GeoTiffWriter writer = new GeoTiffWriter(file);
+            writer.write(beforeClassesGrid, null);
         // Raster to vector
         final PolygonExtractionProcess process = new PolygonExtractionProcess();
         this.beforeClassification = process.execute(beforeClassesGrid,  0, true,
-                null, Collections.singletonList(-1), null, null);
+                this.roi, Collections.singletonList(Float.NaN), null, null);
 //        System.out.println("Polygon Extraction After");
         this.afterClassification = process.execute(afterClassesGrid, 0, true,
-                null, Collections.singletonList(-1), null, null);
+                this.roi, Collections.singletonList(Float.NaN), null, null);
     }
 
     void detectLandUseChanges() throws FactoryException {
@@ -194,10 +227,10 @@ class ChangeDetector {
      * Checking for pixel neighbors
      * @param pixels pixels matrix
      */
-    private void checkPixels(float[][] pixels) {
+    private void checkPixels(Float[][] pixels) {
         IntStream.range(0, pixels.length - 1).parallel().forEach(x ->
             IntStream.range(0, pixels[x].length - 1).parallel().forEach(y -> {
-                float val = pixels[x][y];
+                Float val = pixels[x][y];
                 if (val != -1) {
                     List<Float> neighbors = new ArrayList<>();
                     for (int i = x - 1; i <= x + 1; ++i) {
@@ -207,7 +240,7 @@ class ChangeDetector {
                                     || j < 0
                                     || i >= pixels.length
                                     || j >= pixels[0].length
-                                    || pixels[i][j] == -1) {
+                                    || pixels[i][j] == Float.NaN) {
                                 continue;
                             }
                             neighbors.add(pixels[i][j]);
@@ -248,7 +281,7 @@ class ChangeDetector {
             builder.append(": ");
             builder.append(getLandUseClass((int)feature.getAttribute("after")));
             builder.append(" ");
-            builder.append(TopologyPreservingSimplifier.simplify((Geometry) it.next().getDefaultGeometry(), 0).toString());
+            builder.append(TopologyPreservingSimplifier.simplify((Geometry) feature.getDefaultGeometry(), 0).toString());
             builder.append("\n");
         }
         return builder.toString();

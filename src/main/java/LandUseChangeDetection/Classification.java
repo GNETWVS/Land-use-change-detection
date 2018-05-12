@@ -291,7 +291,7 @@ public class Classification implements Serializable {
 //    }
 
     public void trainByNextGISData(File nextShp, File s2DataFile, ClassificationEnum type, Resolution resolution) throws Exception {
-        SentinelData sData = new SentinelData(s2DataFile, resolution);
+        SentinelData sData = new SentinelData(s2DataFile, resolution, type);
         GridCoverage2D mask = getNextGISCoverage(nextShp, sData);
         SVMData svmData = getTrainingAndValidationData(sData, mask);
         sData = null;

@@ -206,10 +206,10 @@ public class Controller {
                     try {
                         updateProgress(0, 1);
                         updateMessage("Opening and parsing of " + beforeSentinelGranuleFile.getName());
-                        SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, resolution);
+                        SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, resolution, SentinelData.getType(beforeSentinelData));
                         updateProgress(0.1, 1);
                         updateMessage("Opening and parsing of " + afterSentinelGranuleFile.getName());
-                        SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution);
+                        SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution, SentinelData.getType(afterSentinelData));
                         updateProgress(0.2, 1);
                         updateMessage("Bands cropping...");
                         ChangeDetector detector;
@@ -242,6 +242,7 @@ public class Controller {
                         updateProgress(0.9, 1);
                         return detector;
                     } catch (Exception e) {
+                        e.printStackTrace();
                         Utils.showErrorMessage("Error",
                                 e.getMessage(),
                                 Arrays.toString(e.getStackTrace()));
@@ -259,19 +260,19 @@ public class Controller {
                             case 0: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        waterLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        waterLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 1: {
-                                        waLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        waLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 2: {
-                                        wbLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        wbLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 3: {
-                                        wfLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        wfLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                 }
@@ -280,19 +281,19 @@ public class Controller {
                             case 1: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        awLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        awLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 1: {
-                                        agriLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        agriLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 2: {
-                                        abLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        abLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 3: {
-                                        afLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        afLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                 }
@@ -301,19 +302,19 @@ public class Controller {
                             case 2: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        bwLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        bwLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 1: {
-                                        baLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        baLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
-                                    }
+                                   }
                                     case 2: {
-                                        buildLevel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        buildLevel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 3: {
-                                        bfLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        bfLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                 }
@@ -322,19 +323,19 @@ public class Controller {
                             case 3: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        fwLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        fwLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 1: {
-                                        faLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        faLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 2: {
-                                        fbLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        fbLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                     case 3: {
-                                        forestLabel.textProperty().setValue(area.getArea() + " m\u2072");
+                                        forestLabel.textProperty().setValue(area.getArea() + " &#178");
                                         break;
                                     }
                                 }

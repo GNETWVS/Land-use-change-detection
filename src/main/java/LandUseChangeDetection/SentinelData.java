@@ -20,6 +20,7 @@ import org.geotools.coverage.processing.Operations;
 import org.geotools.coverage.processing.operation.Crop;
 import org.geotools.coverageio.jp2k.JP2KReader;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.geometry.Envelope;
@@ -161,7 +162,7 @@ public class SentinelData {
                 band.getPixels(band.getMinX(), band.getMinY(), this.getWidth(), this.getHeight(), pixels[i]);
             }
         }
-        if (this.pixels[0][0] == 0) {
+        if (this.pixels[0][pixel] < 0) {
             return null;
         }
         double[] vector = new double[bands.size()];
@@ -233,7 +234,23 @@ public class SentinelData {
         return FORMATTER.parse(sensingDateString);
     }
 
-    SentinelData(File granuleDir, Resolution r) throws Exception {
+    private ClassificationEnum type;
+
+    public ClassificationEnum getType() {
+        return type;
+    }
+
+    public static ClassificationEnum getType(File file) throws Exception {
+        if (file.getParentFile().getName().startsWith("S2A")) {
+            return ClassificationEnum.A;
+        } else if (file.getParentFile().getName().startsWith("S2B")) {
+            return ClassificationEnum.B;
+        }
+        throw new Exception("Please select valid Sentinel file");
+    }
+
+    SentinelData(File granuleDir, Resolution r, ClassificationEnum type) throws Exception {
+        this.type = type;
         this.resolution = r;
         // Get date
         // TODO: Sensing date without hh.mm.ss
@@ -417,6 +434,13 @@ public class SentinelData {
         }
         params.parameter("Source").setValue(this.cloudAndSnowMask);
         this.cloudAndSnowMask = (GridCoverage2D) processor.doOperation(params);
+//        ListIterator<GridCoverage2D> ita = this.bands.listIterator();
+//        while (ita.hasNext()) {
+//            GridCoverage2D band = ita.next();
+//            File file = new File("C:\\Users\\Arthur\\Desktop\\Java\\" + ita.nextIndex() + ".tiff");
+//            GeoTiffWriter writer = new GeoTiffWriter(file);
+//            writer.write(band, null);
+//        }
     }
 
     void cropBands(Geometry geometry) throws Exception {
@@ -435,6 +459,13 @@ public class SentinelData {
         }
         params.parameter("Source").setValue(this.cloudAndSnowMask);
         this.cloudAndSnowMask = (GridCoverage2D) processor.doOperation(params);
+//        ListIterator<GridCoverage2D> ita = this.bands.listIterator();
+//        while (ita.hasNext()) {
+//            GridCoverage2D band = ita.next();
+//            File file = new File("C:\\Users\\Arthur\\Desktop\\Java\\" + ita.nextIndex() + ".tiff");
+//            GeoTiffWriter writer = new GeoTiffWriter(file);
+//            writer.write(band, null);
+//        }
     }
 
     // TODO: comment
