@@ -37,9 +37,13 @@ public class Data {
 
     public static List<LandUseChangeDetectionResult> getSquares(SimpleFeatureCollection collection) throws Exception {
         // Insert both collection to PostGIS
-        insertCollection(collection);
-        List<LandUseChangeDetectionResult> results = getLandUseChanges();
-        clearDB();
+        List<LandUseChangeDetectionResult> results;
+        try {
+            insertCollection(collection);
+            results = getLandUseChanges();
+        } finally {
+            clearDB();
+        }
         return results;
     }
 

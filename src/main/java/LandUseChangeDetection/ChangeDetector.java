@@ -216,6 +216,9 @@ class ChangeDetector {
     void detectLandUseChanges() throws FactoryException {
         this.changeDetection = getIntersections(this.beforeClassification, this.afterClassification);
         this.changeDetection = Utils.transformChangeDetectionCollectionCRS(this.changeDetection, DefaultGeographicCRS.WGS84);
+        System.out.println(changeDetection.getSchema().getCoordinateReferenceSystem());
+        System.out.println();
+        System.out.println(changeDetection.getSchema().getCoordinateReferenceSystem().getCoordinateSystem());
     }
 
     void calculateLUCDAreas() throws Exception {

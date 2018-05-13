@@ -248,25 +248,23 @@ public class Controller {
                     this.lucd = task.getValue();
                     List<LandUseChangeDetectionResult> areas = lucd.getAreas();
                     for (LandUseChangeDetectionResult area : areas) {
-                        String power = "&#178;";
-                        String m = new String(power.getBytes("UTF-8"), "ISO-8859-1");
                         switch (area.getBefore()) {
                             case 0: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        waterLabel.textProperty().setValue(area.getArea() + m);
+                                        waterLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 1: {
-                                        waLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        waLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 2: {
-                                        wbLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        wbLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 3: {
-                                        wfLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        wfLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                 }
@@ -275,19 +273,19 @@ public class Controller {
                             case 1: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        awLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        awLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 1: {
-                                        agriLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        agriLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 2: {
-                                        abLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        abLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 3: {
-                                        afLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        afLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                 }
@@ -296,19 +294,19 @@ public class Controller {
                             case 2: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        bwLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        bwLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 1: {
-                                        baLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        baLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                    }
                                     case 2: {
-                                        buildLevel.textProperty().setValue(area.getArea() + " " + m);
+                                        buildLevel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 3: {
-                                        bfLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        bfLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                 }
@@ -317,19 +315,19 @@ public class Controller {
                             case 3: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        fwLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        fwLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 1: {
-                                        faLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        faLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 2: {
-                                        fbLabel.textProperty().setValue(area.getArea() + " " + m);
+                                        fbLabel.textProperty().setValue(area.getArea() + " m²");
                                         break;
                                     }
                                     case 3: {
-                                        forestLabel.textProperty().setValue(area.getArea() + " "+ m);
+                                        forestLabel.textProperty().setValue(area.getArea() + " m²" );
                                         break;
                                     }
                                 }
@@ -352,6 +350,7 @@ public class Controller {
                 Utils.showErrorMessage("Error",
                         task.getException().getMessage(),
                         Arrays.toString(task.getException().getStackTrace()));
+                form.getDialogStage().close();
             });
             ((Stage)this.appForm.getScene().getWindow()).setOnHiding(event -> task.cancel());
 
