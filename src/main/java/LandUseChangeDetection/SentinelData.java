@@ -253,7 +253,6 @@ public class SentinelData {
         this.type = type;
         this.resolution = r;
         // Get date
-        // TODO: Sensing date without hh.mm.ss
         this.sensingDate = getSensingDate(granuleDir);
         // Get bands' files
         StringBuilder fileBuilder = new StringBuilder(granuleDir.getAbsolutePath());

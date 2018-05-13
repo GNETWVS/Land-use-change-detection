@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -20,10 +21,12 @@ public class ProgressForm {
             dialogStage.initStyle(StageStyle.UTILITY);
             dialogStage.setResizable(false);
             dialogStage.initModality(Modality.APPLICATION_MODAL);
-
+            dialogStage.setTitle("Loading...");
+            dialogStage.setWidth(400);
+            dialogStage.setHeight(150);
             pb.setProgress(-1F);
-
-            final HBox hb = new HBox();
+            pb.setPrefWidth(380);
+            final VBox hb = new VBox();
             hb.setSpacing(5);
             hb.setAlignment(Pos.CENTER);
             hb.getChildren().addAll(pb, status);

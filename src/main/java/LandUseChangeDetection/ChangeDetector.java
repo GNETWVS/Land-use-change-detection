@@ -147,8 +147,7 @@ class ChangeDetector {
         int height = beforeSentinelData.getHeight();
         IntStream.range(0, width).parallel().forEach(x ->
             IntStream.range(0, height).parallel().forEach(y -> {
-                int i = y * width + x;
-                System.out.println(i);
+                int i = y * width + x;;
                 if (beforeMaskPixels[i] != 1 && beforeMaskPixels[i] != -9999 && beforeMaskPixels[i] != Float.NaN
                         && afterMaskPixels[i] != 1 && afterMaskPixels[i] != -9999 && afterMaskPixels[i] != Float.NaN) {
                     double[] bPixels = beforeSentinelData.getPixelVector(i);

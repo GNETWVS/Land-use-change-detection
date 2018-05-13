@@ -203,51 +203,43 @@ public class Controller {
             Task<ChangeDetector> task = new Task<ChangeDetector>() {
                 @Override
                 protected ChangeDetector call() throws Exception {
-                    try {
-                        updateProgress(0, 1);
-                        updateMessage("Opening and parsing of " + beforeSentinelGranuleFile.getName());
-                        SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, resolution, SentinelData.getType(beforeSentinelData));
-                        updateProgress(0.1, 1);
-                        updateMessage("Opening and parsing of " + afterSentinelGranuleFile.getName());
-                        SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution, SentinelData.getType(afterSentinelData));
-                        updateProgress(0.2, 1);
-                        updateMessage("Bands cropping...");
-                        ChangeDetector detector;
-                        if (roiFile == null) {
-                            detector = new ChangeDetector(firstSentinelData, secondSentinelData);
-                        } else {
-                            DataStore store = Utils.openShapefile(roiFile);
-                            if (store == null || store.getTypeNames() == null || store.getTypeNames().length == 0) {
-                                throw new NullPointerException("ROI vector data store is null");
-                            }
-                            String waterTypeName = store.getTypeNames()[0];
-                            detector = new ChangeDetector(firstSentinelData, secondSentinelData,
-                                    Utils.openShapefile(roiFile).getFeatureSource(waterTypeName).getFeatures());
+                    updateProgress(0, 1);
+                    updateMessage("Opening and parsing of " + beforeSentinelGranuleFile.getName());
+                    SentinelData firstSentinelData = new SentinelData(beforeSentinelGranuleFile, resolution, SentinelData.getType(beforeSentinelData));
+                    updateProgress(0.1, 1);
+                    updateMessage("Opening and parsing of " + afterSentinelGranuleFile.getName());
+                    SentinelData secondSentinelData = new SentinelData(afterSentinelGranuleFile, resolution, SentinelData.getType(afterSentinelData));
+                    updateProgress(0.2, 1);
+                    updateMessage("Bands cropping...");
+                    ChangeDetector detector;
+                    if (roiFile == null) {
+                        detector = new ChangeDetector(firstSentinelData, secondSentinelData);
+                    } else {
+                        DataStore store = Utils.openShapefile(roiFile);
+                        if (store == null || store.getTypeNames() == null || store.getTypeNames().length == 0) {
+                            throw new NullPointerException("ROI vector data store is null");
                         }
-                        updateProgress(0.3, 1);
-                        updateMessage("Bands classification and clouds and snow removing...");
-                        detector.certificate();
-                        updateProgress(0.5, 1);
-                        updateMessage("Land-use classification results checking and fixing...");
-                        detector.checkAndFixPixels();
-                        updateProgress(0.6, 1);
-                        updateMessage("Land-use classification vector extraction...");
-                        detector.extractPolygons();
-                        updateProgress(0.7, 1);
-                        updateMessage("Land-use change detection...");
-                        detector.detectLandUseChanges();
-                        updateProgress(0.8, 1);
-                        updateMessage("Land-use change areas calculation...");
-                        detector.calculateLUCDAreas();
-                        updateProgress(0.9, 1);
-                        return detector;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Utils.showErrorMessage("Error",
-                                e.getMessage(),
-                                Arrays.toString(e.getStackTrace()));
-                        return null;
+                        String waterTypeName = store.getTypeNames()[0];
+                        detector = new ChangeDetector(firstSentinelData, secondSentinelData,
+                                Utils.openShapefile(roiFile).getFeatureSource(waterTypeName).getFeatures());
                     }
+                    updateProgress(0.3, 1);
+                    updateMessage("Bands classification and clouds and snow removing...");
+                    detector.certificate();
+                    updateProgress(0.5, 1);
+                    updateMessage("Land-use classification results checking and fixing...");
+                    detector.checkAndFixPixels();
+                    updateProgress(0.6, 1);
+                    updateMessage("Land-use classification vector extraction...");
+                    detector.extractPolygons();
+                    updateProgress(0.7, 1);
+                    updateMessage("Land-use change detection...");
+                    detector.detectLandUseChanges();
+                    updateProgress(0.8, 1);
+                    updateMessage("Land-use change areas calculation...");
+                    detector.calculateLUCDAreas();
+                    updateProgress(0.9, 1);
+                    return detector;
                 }
             };
             form.activateProgressBar(task);
@@ -256,23 +248,25 @@ public class Controller {
                     this.lucd = task.getValue();
                     List<LandUseChangeDetectionResult> areas = lucd.getAreas();
                     for (LandUseChangeDetectionResult area : areas) {
+                        String power = "&#178;";
+                        String m = new String(power.getBytes("UTF-8"), "ISO-8859-1");
                         switch (area.getBefore()) {
                             case 0: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        waterLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        waterLabel.textProperty().setValue(area.getArea() + m);
                                         break;
                                     }
                                     case 1: {
-                                        waLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        waLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 2: {
-                                        wbLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        wbLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 3: {
-                                        wfLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        wfLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                 }
@@ -281,19 +275,19 @@ public class Controller {
                             case 1: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        awLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        awLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 1: {
-                                        agriLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        agriLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 2: {
-                                        abLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        abLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 3: {
-                                        afLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        afLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                 }
@@ -302,19 +296,19 @@ public class Controller {
                             case 2: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        bwLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        bwLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 1: {
-                                        baLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        baLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                    }
                                     case 2: {
-                                        buildLevel.textProperty().setValue(area.getArea() + " &#178");
+                                        buildLevel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 3: {
-                                        bfLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        bfLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                 }
@@ -323,19 +317,19 @@ public class Controller {
                             case 3: {
                                 switch (area.getAfter()) {
                                     case 0: {
-                                        fwLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        fwLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 1: {
-                                        faLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        faLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 2: {
-                                        fbLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        fbLabel.textProperty().setValue(area.getArea() + " " + m);
                                         break;
                                     }
                                     case 3: {
-                                        forestLabel.textProperty().setValue(area.getArea() + " &#178");
+                                        forestLabel.textProperty().setValue(area.getArea() + " "+ m);
                                         break;
                                     }
                                 }
@@ -347,12 +341,22 @@ public class Controller {
                     this.wktTextArea.textProperty().setValue(this.lucd.getWKT());
                     this.webEngine.executeScript("showResult();");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Utils.showErrorMessage("Error",
+                            e.getMessage(),
+                            Arrays.toString(e.getStackTrace()));
                 } finally {
                     form.getDialogStage().close();
                 }
             });
+            task.setOnFailed(e -> {
+                Utils.showErrorMessage("Error",
+                        task.getException().getMessage(),
+                        Arrays.toString(task.getException().getStackTrace()));
+            });
+            ((Stage)this.appForm.getScene().getWindow()).setOnHiding(event -> task.cancel());
+
             new Thread(task).start();
+
         } catch (Exception e) {
             Utils.showErrorMessage("Error",
                     e.getMessage(),
