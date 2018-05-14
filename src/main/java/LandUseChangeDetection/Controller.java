@@ -21,14 +21,22 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import jdk.nashorn.api.scripting.JSObject;
+import org.apache.commons.io.FileUtils;
 import org.esa.s2tbx.dataio.VirtualPath;
 import org.geotools.data.DataStore;
+import org.geotools.data.collection.ListFeatureCollection;
+import org.hsqldb.lib.FileUtil;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Controller {
 
@@ -374,6 +382,174 @@ public class Controller {
             roiLabel.setText("");
         } else {
             roiLabel.setText(roiFile.getAbsolutePath());
+        }
+    }
+
+    public void openLUCD(ActionEvent actionEvent) {
+        FileChooser fc = new FileChooser();
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("XML files (*.lucd)", "*.lucd");
+        fc.setSelectedExtensionFilter(filter);
+        File file = fc.showOpenDialog(appForm.getScene().getWindow());
+        if (file == null || !file.exists()) {
+            Utils.showErrorMessage("Error",
+                    "Please select LUCD file",
+                    "");
+            return;
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            CDSer lucd = (CDSer) ois.readObject();
+            List<LandUseChangeDetectionResult> areas = lucd.resultList;
+            for (LandUseChangeDetectionResult area : areas) {
+                switch (area.getBefore()) {
+                    case 0: {
+                        switch (area.getAfter()) {
+                            case 0: {
+                                waterLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 1: {
+                                waLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 2: {
+                                wbLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 3: {
+                                wfLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case 1: {
+                        switch (area.getAfter()) {
+                            case 0: {
+                                awLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 1: {
+                                agriLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 2: {
+                                abLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 3: {
+                                afLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case 2: {
+                        switch (area.getAfter()) {
+                            case 0: {
+                                bwLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 1: {
+                                baLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 2: {
+                                buildLevel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 3: {
+                                bfLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case 3: {
+                        switch (area.getAfter()) {
+                            case 0: {
+                                fwLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 1: {
+                                faLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 2: {
+                                fbLabel.textProperty().setValue(area.getArea() + " m²");
+                                break;
+                            }
+                            case 3: {
+                                forestLabel.textProperty().setValue(area.getArea() + " m²" );
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            PrintWriter writer = new PrintWriter(new File("src/resources/AppWebForm/res/result.json"));
+            writer.write(lucd.json);
+            writer.close();
+            this.wktTextArea.textProperty().setValue(lucd.wkt);
+            this.webEngine.executeScript("showResult();");
+        } catch (Exception e) {
+            Utils.showErrorMessage("Error",
+                    "Cannot open LUCD file",
+                    "");
+        }
+    }
+
+    public void saveLUCD(ActionEvent actionEvent) {
+        if (this.lucd == null) {
+            Utils.showErrorMessage("Error",
+                    "Please, make Land Use Change Detection Before",
+                    "");
+            return;
+        }
+        FileChooser fc = new FileChooser();
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("XML files (*.lucd)", "*.lucd");
+        fc.setSelectedExtensionFilter(filter);
+        File file = fc.showSaveDialog(appForm.getScene().getWindow());
+        if (file != null) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+                String gson = "";
+                FileInputStream inputStream = new FileInputStream("src/resources/AppWebForm/res/result.json");
+                Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name());
+                while (scanner.hasNextLine()) {
+                    gson += scanner.nextLine();
+                }
+                scanner.close();
+                inputStream.close();
+                CDSer s = new CDSer(this.lucd.getAreas(), gson, this.wktTextArea.getText());
+                oos.writeObject(s);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Utils.showErrorMessage("Error",
+                        "Cannot write LUCD file",
+                        "");
+            }
+        }
+    }
+
+    public void saveSHP(ActionEvent actionEvent) {
+        if (this.lucd == null) {
+            Utils.showErrorMessage("Error",
+                    "Please, make Land Use Change Detection Before",
+                    "");
+            return;
+        }
+        FileChooser fc = new FileChooser();
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("XML files (*.shp)", "*.shp");
+        fc.setSelectedExtensionFilter(filter);
+        File file = fc.showSaveDialog(appForm.getScene().getWindow());
+        if (file != null) {
+            try {
+                Utils.writeShapefile(this.lucd.getChangeDetection(), file.getAbsolutePath());
+            } catch (IOException e) {
+                Utils.showErrorMessage("Error",
+                        "Cannot write Shapefile",
+                        "");
+            }
         }
     }
 }

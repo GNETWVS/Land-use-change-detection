@@ -14,7 +14,6 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
-import org.geotools.gce.geotiff.GeoTiffWriter;
 import org.geotools.process.raster.PolygonExtractionProcess;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeature;
@@ -27,7 +26,6 @@ import javax.media.jai.RasterFactory;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -191,19 +189,8 @@ class ChangeDetector {
                 after.setSample(i, j, 0, row[j]);
             }
         }
-//
-//        Map<String, Object> properties = new HashMap<String, Object>();
-//        NoDataContainer container = new NoDataContainer(-9999);
-//        CoverageUtilities.setNoDataProperty(properties, container);
-//        // Setting NoData as property
-//        CoverageUtilities.setNoDataProperty(properties, container);
-//        ROI roi = new ROIGeometry(this.roi);
-//        CoverageUtilities.setROIProperty(properties, roi);
         GridCoverage2D beforeClassesGrid = factory.create("Before classes", before, beforeSentinelData.getEnvelope());
         GridCoverage2D afterClassesGrid = factory.create("After classes", after, afterSentinelData.getEnvelope());
-        File file = new File("C:\\Users\\Arthur\\Desktop\\Java\\99.tiff");
-            GeoTiffWriter writer = new GeoTiffWriter(file);
-            writer.write(beforeClassesGrid, null);
         // Raster to vector
         final PolygonExtractionProcess process = new PolygonExtractionProcess();
         this.beforeClassification = process.execute(beforeClassesGrid,  0, true,
@@ -216,9 +203,6 @@ class ChangeDetector {
     void detectLandUseChanges() throws FactoryException {
         this.changeDetection = getIntersections(this.beforeClassification, this.afterClassification);
         this.changeDetection = Utils.transformChangeDetectionCollectionCRS(this.changeDetection, DefaultGeographicCRS.WGS84);
-        System.out.println(changeDetection.getSchema().getCoordinateReferenceSystem());
-        System.out.println();
-        System.out.println(changeDetection.getSchema().getCoordinateReferenceSystem().getCoordinateSystem());
     }
 
     void calculateLUCDAreas() throws Exception {

@@ -1,6 +1,8 @@
 package LandUseChangeDetection;
 
-public class LandUseChangeDetectionResult {
+import java.io.Serializable;
+
+public class LandUseChangeDetectionResult implements Serializable {
 
     private double area;
     private int before;
