@@ -1,4 +1,4 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
 import java.io.File;
 import java.io.IOException;

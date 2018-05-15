@@ -1,7 +1,7 @@
-package LandUseChangeDetection.forms;
+package landUseChangeDetection.forms;
 
-import LandUseChangeDetection.SentinelLevelUpdater;
-import LandUseChangeDetection.Utils;
+import landUseChangeDetection.SentinelLevelUpdater;
+import landUseChangeDetection.Utils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;

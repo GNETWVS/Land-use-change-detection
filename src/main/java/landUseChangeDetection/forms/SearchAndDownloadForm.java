@@ -1,6 +1,6 @@
-package LandUseChangeDetection.forms;
+package landUseChangeDetection.forms;
 
-import LandUseChangeDetection.Utils;
+import landUseChangeDetection.Utils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -114,7 +114,7 @@ public class SearchAndDownloadForm {
         sensingStartDate.setDayCellFactory(dayCellFactory);
         sensingFinishDate.setDayCellFactory(dayCellFactory);
         WebEngine webEngine = webMap.getEngine();
-        File mapIndexFile = new File("src/resources/SaDWebForm/index.html");
+        File mapIndexFile = new File("src/main/resources/SaDWebForm/index.html");
         webEngine.load("file:" + mapIndexFile.getAbsolutePath());
         this.webEngine = webEngine;
         this.webEngine.setJavaScriptEnabled(true);

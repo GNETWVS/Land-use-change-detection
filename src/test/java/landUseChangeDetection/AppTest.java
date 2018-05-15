@@ -1,11 +1,11 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Unit test for simple App.
+ * Unit test for simple landUseChangeDetection.
  */
 public class AppTest
     extends TestCase

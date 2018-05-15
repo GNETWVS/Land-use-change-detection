@@ -1,4 +1,4 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
 /**
  * Sentinel data resolutions

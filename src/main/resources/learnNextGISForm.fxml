@@ -6,7 +6,7 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="learnNextGISForm" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LandUseChangeDetection.forms.TrainNextGisForm">
+<AnchorPane fx:id="learnNextGISForm" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="landUseChangeDetection.forms.TrainNextGisForm">
 <children>
     <TitledPane animated="false" collapsible="false" layoutX="28.0" layoutY="14.0" prefHeight="276.0" prefWidth="572.0" text="Input" AnchorPane.leftAnchor="14.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="14.0">
         <content>

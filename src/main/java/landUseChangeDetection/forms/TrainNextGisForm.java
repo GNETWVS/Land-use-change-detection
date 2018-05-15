@@ -1,6 +1,6 @@
-package LandUseChangeDetection.forms;
+package landUseChangeDetection.forms;
 
-import LandUseChangeDetection.*;
+import landUseChangeDetection.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -21,8 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-import java.util.Observable;
 import java.util.stream.Collectors;
 
 public class TrainNextGisForm {

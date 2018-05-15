@@ -1,6 +1,6 @@
-package LandUseChangeDetection.data;
+package landUseChangeDetection.data;
 
-import LandUseChangeDetection.LandUseChangeDetectionResult;
+import landUseChangeDetection.LandUseChangeDetectionResult;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.DefaultTransaction;

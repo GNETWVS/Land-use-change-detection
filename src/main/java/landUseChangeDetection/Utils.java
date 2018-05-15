@@ -1,4 +1,4 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
@@ -33,7 +33,6 @@ import org.opengis.referencing.operation.TransformException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.HashMap;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 

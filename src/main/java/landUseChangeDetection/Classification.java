@@ -1,4 +1,4 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
@@ -47,12 +47,12 @@ public class Classification implements Serializable {
     /**
      * Path ot serializable object
      */
-    public static final File svmModelPath = new File("src/resources/model.svm");
+    public static final File svmModelPath = new File("src/main/resources/model.svm");
 
     /**
      * Path ot serializable object
      */
-    public static final File svmBModelPath = new File("src/resources/modelB.svm");
+    public static final File svmBModelPath = new File("src/main/resources/modelB.svm");
 
     /**
      * SVM A model

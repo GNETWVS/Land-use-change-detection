@@ -1,6 +1,6 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
-import LandUseChangeDetection.data.Data;
+import landUseChangeDetection.data.Data;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.MultiPolygon;

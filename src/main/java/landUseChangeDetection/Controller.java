@@ -1,10 +1,9 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
-import LandUseChangeDetection.forms.ProgressForm;
+import landUseChangeDetection.forms.ProgressForm;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -20,23 +19,15 @@ import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import jdk.nashorn.api.scripting.JSObject;
-import org.apache.commons.io.FileUtils;
 import org.esa.s2tbx.dataio.VirtualPath;
 import org.geotools.data.DataStore;
-import org.geotools.data.collection.ListFeatureCollection;
-import org.hsqldb.lib.FileUtil;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Controller {
 
@@ -79,7 +70,7 @@ public class Controller {
         resolutionBox.setItems(resolutions);
         resolutionBox.setValue("60m");
         this.webEngine = webMap.getEngine();
-        File mapIndexFile = new File("src/resources/AppWebForm/index.html");
+        File mapIndexFile = new File("src/main/resources/AppWebForm/index.html");
         webEngine.load("file:" + mapIndexFile.getAbsolutePath());
         webEngine.setJavaScriptEnabled(true);
     }
@@ -343,7 +334,7 @@ public class Controller {
                             }
                         }
                     }
-                    Utils.writeGeoJSON(this.lucd.getChangeDetection(), "src/resources/AppWebForm/res/result.json");
+                    Utils.writeGeoJSON(this.lucd.getChangeDetection(), "src/main/resources/AppWebForm/res/result.json");
                     this.wktTextArea.textProperty().setValue(this.lucd.getWKT());
                     this.webEngine.executeScript("showResult();");
                 } catch (Exception e) {
@@ -487,7 +478,7 @@ public class Controller {
                     }
                 }
             }
-            PrintWriter writer = new PrintWriter(new File("src/resources/AppWebForm/res/result.json"));
+            PrintWriter writer = new PrintWriter(new File("src/main/resources/AppWebForm/res/result.json"));
             writer.write(lucd.json);
             writer.close();
             this.wktTextArea.textProperty().setValue(lucd.wkt);
@@ -513,7 +504,7 @@ public class Controller {
         if (file != null) {
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
                 String gson = "";
-                FileInputStream inputStream = new FileInputStream("src/resources/AppWebForm/res/result.json");
+                FileInputStream inputStream = new FileInputStream("src/main/resources/AppWebForm/res/result.json");
                 Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name());
                 while (scanner.hasNextLine()) {
                     gson += scanner.nextLine();

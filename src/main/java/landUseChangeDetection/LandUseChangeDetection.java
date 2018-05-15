@@ -1,4 +1,4 @@
-package LandUseChangeDetection;
+package landUseChangeDetection;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -11,7 +11,7 @@ import javafx.stage.Stage;
  * Hello world!
  *
  */
-public class App extends Application
+public class LandUseChangeDetection extends Application
 {
     @Override
     public void start(Stage primaryStage) throws Exception {
