@@ -11,6 +11,10 @@ public class CDSer implements Serializable {
 
     String wkt;
 
+    CDSer() {
+
+    }
+
     public CDSer(List<LandUseChangeDetectionResult> list, String json, String wkt) {
         this.resultList = list;
         this.json = json;

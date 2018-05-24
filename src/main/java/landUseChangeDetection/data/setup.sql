@@ -1,19 +1,19 @@
 -- -- Enable PostGIS (includes raster)
--- CREATE EXTENSION postgis;
+CREATE EXTENSION postgis;
 -- -- Enable Topology
--- CREATE EXTENSION postgis_topology;
+CREATE EXTENSION postgis_topology;
 -- -- Enable PostGIS Advanced 3D
 -- -- and other geoprocessing algorithms
 -- -- sfcgal not available with all distributions
--- CREATE EXTENSION postgis_sfcgal;
+CREATE EXTENSION postgis_sfcgal;
 -- -- fuzzy matching needed for Tiger
--- CREATE EXTENSION fuzzystrmatch;
+CREATE EXTENSION fuzzystrmatch;
 -- -- rule based standardizer
--- CREATE EXTENSION address_standardizer;
+CREATE EXTENSION address_standardizer;
 -- -- example rule data set
--- CREATE EXTENSION address_standardizer_data_us;
+CREATE EXTENSION address_standardizer_data_us;
 -- -- Enable US Tiger Geocoder
--- CREATE EXTENSION postgis_tiger_geocoder;
+CREATE EXTENSION postgis_tiger_geocoder;
 
 DROP TABLE landUses;
 
